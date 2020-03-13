@@ -66,8 +66,10 @@ function process(data) {
     const start = new Date(Math.min.apply(null, data.map(entry => entry.date)));
     // add a field indicating the day since the start of the data set
     data.forEach(entry => entry.day = days(start, entry.date));
+    // set default display to all US states
     ui_state_selection.value = 'all';
     plot(data.filter(entry => entry.state === 'all'));
+    // if the select box is changed, update the plot
     ui_state_selection.addEventListener('change', (event) => {
         plot(data.filter(entry => entry.state === ui_state_selection.value));
     });

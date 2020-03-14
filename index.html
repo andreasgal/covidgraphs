@@ -2,18 +2,18 @@
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="style.css">
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="main.js"></script>
   </head>
   <body>
     <label for="state">Select state:</label>
     <select id="state">
     </select>
     <select id="type">
-      <option value='positive'>Tested positive</option>
-      <option value='negative'>Tested negative</option>
-      <option value='total'>Total tests</option>
+      <option value="positive">Tested positive</option>
+      <option value="negative">Tested negative</option>
+      <option value="total">Total tests</option>
     </select>
     <div id="graph"></div>
   </body>
-  <script src='main.js'></script>
 </html>

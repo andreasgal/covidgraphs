@@ -1,5 +1,18 @@
-html, body, div {
+html, body, div#graph {
     width: 100%;
     height: 100%;
     margin: 0;
+}
+div#ui {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 10px;
+}
+div#source {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    align: right;
+    margin: 10px;
 }

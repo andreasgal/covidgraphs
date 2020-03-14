@@ -106,27 +106,24 @@ function preprocess_covid_data(data) {
     return result.sort((a, b) => a.day - b.day);
 }
 
-// issue a fetch for the COVID data as soon as the script executes
-const state_data =
-      fetch('https://covidtracking.com/api/states/daily')
-      .then(response => response.json())
-      .then(data => preprocess_covid_data(data))
-      .catch((error) => {
-          console.log(error);
-      });
-const us_data =
-      fetch('https://covidtracking.com/api/us/daily')
-      .then(response => response.json())
-      .then(data => preprocess_covid_data(data))
-      .catch((error) => {
-          console.log(error);
-      });
+function load(url) {
+    return fetch(url)
+        .then(response => response.json())
+        .then(data => preprocess_covid_data(data))
+        .catch((error) => {
+            console.log(error);
+        });
+}
+
+// Issue a fetch for the COVID data as soon as the script executes
+const fetches = Promise.all([load('https://covidtracking.com/api/states/daily'),
+                             load('https://covidtracking.com/api/us/daily')])
 
 // once the window is loaded we can process the data
 window.onload = () => {
     const ui_state = document.getElementById('state');
     const ui_type = document.getElementById('type');
-    Promise.all([state_data, us_data]).then(datasets => {
+    fetches.then(datasets => {
         const data = datasets.flat();
         console.log(data);
         // extract list of states from the data, move 'all' to the top,  and set to the default 'all'

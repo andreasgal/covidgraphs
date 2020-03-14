@@ -138,7 +138,7 @@ window.onload = () => {
         const types = Object.keys(data[0]).filter(k => k !== 'date' && k !== 'day' && k !== 'state');
         ui_type.innerHTML =
             types.map(type => '<option value="' + type + '" ' + ((type === 'positive') ? 'selected' : '') + '>' +
-                      ((type !== 'death') ? 'Tested ' : '') + type + '</option>').join('');
+                      ((type !== 'death') ? 'Tested ' + type : 'Deaths') + '</option>').join('');
         // refresh handler (also used for the initial paint)
         const refresh = () => {
             const selected_data = data.filter(d => d.state === ui_state.value);

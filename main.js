@@ -132,7 +132,13 @@ window.onload = () => {
         // extract list of states from the data, move 'all' to the top,  and set to the default 'all'
         const states = [].concat(['all'], unique(data.map(d => d.state)).sort().filter(name => name !== 'all'));
         ui_state.innerHTML =
-            states.map(state => '<option value="' + state + '" ' + ((state === 'all') ? 'selected' : '') + '>' + state + '</option>').join('');
+            states.map(state => '<option value="' + state + '" ' + ((state === 'all') ? 'selected' : '') + '>' +
+                       state + '</option>').join('');
+        // extract types of cases
+        const types = Object.keys(data[0]).filter(k => k !== 'date' && k !== 'day' && k !== 'state');
+        ui_type.innerHTML =
+            types.map(type => '<option value="' + type + '" ' + ((type === 'positive') ? 'selected' : '') + '>' +
+                      ((type !== 'death') ? 'Tested ' : '') + type + '</option>').join('');
         // refresh handler (also used for the initial paint)
         const refresh = () => {
             const selected_data = data.filter(d => d.state === ui_state.value);

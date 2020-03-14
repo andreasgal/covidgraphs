@@ -21,7 +21,7 @@ function sum(array) {
     return array.reduce((total, value) => total + (value | 0), 0);
 }
 
-function plot(data) {
+function plot(data, state, type) {
     const div = document.getElementById('graph');
 
     // remove anything we might have drawn before
@@ -43,6 +43,13 @@ function plot(data) {
     const y = d3.scaleLinear()
           .domain(d3.extent([].concat([0], data.map(d => d.value))))
           .range([height - margin.bottom, margin.top]);
+
+    svg.append('text')
+        .attr('x', width / 2)
+        .attr('y', margin.top / 2)
+        .attr('text-anchor', 'middle')
+        .style('font-size', '24px')
+        .text('COVID-19 ' + type + ' tests (' + ((state === 'all') ? 'United States' : state) + ')')
 
     const font = '14px Helvetica Neue';
 
@@ -130,7 +137,7 @@ window.onload = () => {
         const refresh = () => {
             const selected_data = data.filter(d => d.state === ui_state.value);
             const selected_type = ui_type.value;
-            plot(selected_data.map(d => ({ date: d.date, value: d[selected_type] })));
+            plot(selected_data.map(d => ({ date: d.date, value: d[selected_type] })), ui_state.value, selected_type);
         };
         // call refresh if UI settings change
         ui_state.addEventListener('change', refresh);

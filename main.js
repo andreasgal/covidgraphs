@@ -13,10 +13,6 @@ function unique(array) {
     return array.filter((value, index) => array.indexOf(value) === index);
 }
 
-function sum(array) {
-    return array.reduce((total, value) => total + (value | 0), 0);
-}
-
 function plot(data, state, type) {
     const div = document.getElementById('graph');
 
@@ -81,6 +77,7 @@ function plot(data, state, type) {
     graph.selectAll('text')
         .data(data)
         .enter().append('text')
+        .filter((d, i) => i)
         .text(d => d.value)
         .attr('x', d => x(d.date) - width / 40)
         .attr('y', d => y(d.value) - height / 100);

@@ -68,14 +68,19 @@ function plot(data) {
         .attr('d', d3.line()
               .x(d => x(d.date))
               .y(d => y(d.value)));
-    graph.selectAll('line-circle')
+    graph.selectAll('circle')
         .data(data)
         .enter().append('circle')
         .attr('fill', 'red')
         .attr('r', 5)
         .attr('cx', d => x(d.date))
         .attr('cy', d => y(d.value));
-
+    graph.selectAll('text')
+        .data(data)
+        .enter().append('text')
+        .text(d => d.value)
+        .attr('x', d => x(d.date) - width / 40)
+        .attr('y', d => y(d.value) - height / 100);
 }
 
 function preprocess_covid_data(data) {

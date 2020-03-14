@@ -21,7 +21,7 @@ function sum(array) {
     return array.reduce((total, value) => total + (value | 0), 0);
 }
 
-function plot(data, type) {
+function plot(data) {
     const div = document.getElementById('graph');
 
     // remove anything we might have drawn before
@@ -41,27 +41,31 @@ function plot(data, type) {
           .domain(d3.extent(data.map(d => d.date)))
           .range([margin.left, width - margin.right]);
     const y = d3.scaleLinear()
-          .domain(d3.extent([].concat([0], data.map(d => d[type]))))
+          .domain(d3.extent([].concat([0], data.map(d => d.value))))
           .range([height - margin.bottom, margin.top]);
 
+    const font = '14px Helvetica Neue';
+
     svg.append('g')
+        .style('font', font)
         .attr('transform', `translate(0,${height - margin.bottom})`)
         .call(d3.axisBottom().scale(x));
 
     svg.append('g')
+        .style('font', font)
         .attr('transform', `translate(${margin.left}, 0)`)
         .call(d3.axisLeft().scale(y));
 
     svg.append('path')
         .datum(data)
         .attr('fill', 'none')
-        .attr("stroke", "black")
-        .attr("stroke-width", 2.5)
-        .attr("stroke-linejoin", "round")
-        .attr("stroke-linecap", "round")
+        .attr('stroke', 'red')
+        .attr('stroke-width', 5)
+        .attr('stroke-linejoin', 'round')
+        .attr('stroke-linecap', 'round')
         .attr('d', d3.line()
               .x(d => x(d.date))
-              .y(d => y(d[type])));
+              .y(d => y(d.value)));
 }
 
 function preprocess_covid_data(data) {
@@ -111,7 +115,7 @@ window.onload = () => {
         const refresh = () => {
             const selected_data = data.filter(d => d.state === ui_state.value);
             const selected_type = ui_type.value;
-            plot(selected_data, selected_type);
+            plot(selected_data.map(d => ({ date: d.date, value: d[selected_type] })));
         };
         // call refresh if UI settings change
         ui_state.addEventListener('change', refresh);

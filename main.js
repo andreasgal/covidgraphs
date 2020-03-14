@@ -15,7 +15,7 @@ function parseDate(date) {
     const month = (date / 100) | 0;
     date -= month * 100;
     const day = date;
-    return new Date(year + '-' + month + '-' + day + 'Z');
+    return new Date(year, month, day);
 }
 
 function days(start, stop) {

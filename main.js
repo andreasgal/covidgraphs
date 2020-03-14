@@ -77,9 +77,10 @@ function plot(data, state, type) {
     graph.selectAll('text')
         .data(data)
         .enter().append('text')
-        .filter((d, i) => i)
+        .attr('text-anchor', 'end')
+        .attr('alignment-baseline', 'after-edge')
         .text(d => d.value)
-        .attr('x', d => x(d.date) - width / 40)
+        .attr('x', d => x(d.date))
         .attr('y', d => y(d.value) - height / 100);
 }
 

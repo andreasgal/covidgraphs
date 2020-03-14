@@ -1,6 +1,7 @@
 'use strict';
 
 const ui_state_selection = document.getElementById('state');
+const ui_type_selection = document.getElementById('type');
 
 fetch('https://covidtracking.com/api/states/daily')
     .then(response => response.json())
@@ -31,17 +32,29 @@ function sum(array) {
 }
 
 function plot(data) {
+    const type = ui_type_selection.value;
     const layout = {
-        type: 'scatter',
-        mode: 'markers',
-    };
-    const config = {
-        displayModeBar: true,
+        title: 'COVID-19 cases since March 4, 2020',
     };
     Plotly.newPlot(document.getElementById('graph'), [{
         x: data.map(entry => entry.day),
-        y: data.map(entry => entry.positive),
-    }, layout, config]);
+        y: data.map(entry => entry[type]),
+        mode: 'lines+markers',
+        line: {
+            color: 'rgb(55, 128, 191)',
+            width: 3,
+        },
+        marker: {
+            color: 'rgb(128, 0, 128)',
+            size: 8,
+        },
+    }], layout);
+}
+
+let DATA;
+
+function refresh() {
+    plot(DATA.filter(entry => entry.state === ui_state_selection.value));
 }
 
 function process(data) {
@@ -68,10 +81,10 @@ function process(data) {
     data.forEach(entry => entry.day = days(start, entry.date));
     // set default display to all US states
     ui_state_selection.value = 'all';
-    plot(data.filter(entry => entry.state === 'all'));
     // if the select box is changed, update the plot
-    ui_state_selection.addEventListener('change', (event) => {
-        plot(data.filter(entry => entry.state === ui_state_selection.value));
-    });
+    ui_state_selection.addEventListener('change', (event) => refresh());
+    ui_type_selection.addEventListener('change', (event) => refresh());
+    DATA = data;
+    refresh();
 }
 

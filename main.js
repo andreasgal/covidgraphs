@@ -91,33 +91,31 @@ function plot(data, state, type) {
 }
 
 function preprocess_covid_data(data) {
-    // we fetch state data and add a 'all' meta state that aggregates the data across all states
     const result = data.slice();
-    unique(data.map(d => d.date)).forEach(date => {
-        const subset = data.filter(d => d.date === date);
-        result.push({
-            date: date,
-            state: 'all',
-            positive: sum(subset.map(d => d.positive)),
-            negative: sum(subset.map(d => d.negative)),
-            pending: sum(subset.map(d => d.pending)),
-            death: sum(subset.map(d => d.death)),
-            total: sum(subset.map(d => d.total)),
-        });
-    });
     // parse date format in the JSON data
     result.forEach(d => d.date = parseDate(d.date));
     // calculate the earliest date in the set
     const start = new Date(Math.min.apply(null, data.map(d => d.date)));
     // add a field indicating the day since the start of the data set
     result.forEach(d => d.day = days(start, d.date));
+    // remove the 'states' field from US data
+    result.forEach(d => delete d.states);
+    // add psuedo state 'all' for US data
+    result.forEach(d => d.state || (d.state = 'all'));
     // sort in order of dates
     return result.sort((a, b) => a.day - b.day);
 }
 
 // issue a fetch for the COVID data as soon as the script executes
-const covid_data =
+const state_data =
       fetch('https://covidtracking.com/api/states/daily')
+      .then(response => response.json())
+      .then(data => preprocess_covid_data(data))
+      .catch((error) => {
+          console.log(error);
+      });
+const us_data =
+      fetch('https://covidtracking.com/api/us/daily')
       .then(response => response.json())
       .then(data => preprocess_covid_data(data))
       .catch((error) => {
@@ -128,7 +126,9 @@ const covid_data =
 window.onload = () => {
     const ui_state = document.getElementById('state');
     const ui_type = document.getElementById('type');
-    covid_data.then(data => {
+    Promise.all([state_data, us_data]).then(datasets => {
+        const data = datasets.flat();
+        console.log(data);
         // extract list of states from the data, move 'all' to the top,  and set to the default 'all'
         const states = [].concat(['all'], unique(data.map(d => d.state)).sort().filter(name => name !== 'all'));
         ui_state.innerHTML =

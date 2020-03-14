@@ -9,10 +9,6 @@ function parseDate(date) {
     return new Date(year, month - 1, day);
 }
 
-function days(start, stop) {
-    return (stop / 1000 - start / 1000) / (3600 * 24);
-}
-
 function unique(array) {
     return array.filter((value, index) => array.indexOf(value) === index);
 }
@@ -96,14 +92,12 @@ function preprocess_covid_data(data) {
     result.forEach(d => d.date = parseDate(d.date));
     // calculate the earliest date in the set
     const start = new Date(Math.min.apply(null, data.map(d => d.date)));
-    // add a field indicating the day since the start of the data set
-    result.forEach(d => d.day = days(start, d.date));
     // remove the 'states' field from US data
     result.forEach(d => delete d.states);
     // add psuedo state 'all' for US data
     result.forEach(d => d.state || (d.state = 'all'));
     // sort in order of dates
-    return result.sort((a, b) => a.day - b.day);
+    return result.sort((a, b) => a.date - b.date);
 }
 
 function load(url) {
@@ -131,7 +125,7 @@ window.onload = () => {
             states.map(state => '<option value="' + state + '" ' + ((state === 'all') ? 'selected' : '') + '>' +
                        state + '</option>').join('');
         // extract types of cases
-        const types = Object.keys(data[0]).filter(k => k !== 'date' && k !== 'day' && k !== 'state');
+        const types = Object.keys(data[0]).filter(k => k !== 'date' && k !== 'state');
         ui_type.innerHTML =
             types.map(type => '<option value="' + type + '" ' + ((type === 'positive') ? 'selected' : '') + '>' +
                       ((type !== 'death') ? 'Tested ' + type : 'Deaths') + '</option>').join('');

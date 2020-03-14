@@ -6,7 +6,7 @@ function parseDate(date) {
     const month = (date / 100) | 0;
     date -= month * 100;
     const day = date;
-    return new Date(year, month, day);
+    return new Date(year, month - 1, day);
 }
 
 function days(start, stop) {
@@ -125,7 +125,6 @@ window.onload = () => {
     const ui_type = document.getElementById('type');
     fetches.then(datasets => {
         const data = datasets.flat();
-        console.log(data);
         // extract list of states from the data, move 'all' to the top,  and set to the default 'all'
         const states = [].concat(['all'], unique(data.map(d => d.state)).sort().filter(name => name !== 'all'));
         ui_state.innerHTML =

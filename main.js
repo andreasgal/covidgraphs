@@ -35,7 +35,7 @@ function plot(data) {
           .attr('width', width)
           .attr('height', height);
 
-    const margin = ({top: 30, right: width / 20, bottom: 60, left: width / 20});
+    const margin = ({top: height / 10, right: width / 15, bottom: height / 8, left: width / 15});
 
     const x = d3.scaleTime()
           .domain(d3.extent(data.map(d => d.date)))
@@ -56,7 +56,9 @@ function plot(data) {
         .attr('transform', `translate(${margin.left}, 0)`)
         .call(d3.axisLeft().scale(y));
 
-    svg.append('path')
+    const graph = svg.append('g');
+
+    graph.append('path')
         .datum(data)
         .attr('fill', 'none')
         .attr('stroke', 'red')
@@ -66,6 +68,14 @@ function plot(data) {
         .attr('d', d3.line()
               .x(d => x(d.date))
               .y(d => y(d.value)));
+    graph.selectAll('line-circle')
+        .data(data)
+        .enter().append('circle')
+        .attr('fill', 'red')
+        .attr('r', 5)
+        .attr('cx', d => x(d.date))
+        .attr('cy', d => y(d.value));
+
 }
 
 function preprocess_covid_data(data) {

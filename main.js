@@ -6,7 +6,7 @@ function parseDate(date) {
     const month = (date / 100) | 0;
     date -= month * 100;
     const day = date;
-    return new Date(Date.UTC(year, month - 1, day));
+    return new Date(Date.UTC(year, month - 1, day, 8, 0, 0));
 }
 
 function unique(array) {
@@ -68,7 +68,7 @@ function plot(data, state, type, predicted_days) {
     svg.append('g')
         .style('font', font)
         .attr('transform', `translate(0,${height - margin.bottom})`)
-        .call(d3.axisBottom().scale(x));
+        .call(d3.axisBottom().scale(x).ticks(data.length));
 
     svg.append('g')
         .style('font', font)

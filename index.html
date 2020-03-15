@@ -3,6 +3,7 @@
   <head>
     <link rel="stylesheet" type="text/css" href="style.css">
     <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/HarryStevens/d3-regression@master/dist/d3-regression.min.js"></script>
     <script src="main.js"></script>
   </head>
   <body>
@@ -11,6 +12,13 @@
       <label for="state">Select state:</label>
       <select id="state"></select>
       <select id="type"></select>
+      <label for="predict">Predict:</label>
+      <select id="predict">
+        <option value="0" selected>Actual data only</option>
+        <option value="7">1 week</option>
+        <option value="14">2 weeks</option>
+        <option value="21">3 weeks</option>
+      </select>
     </div>
     <div id="source">
       Source: <a href="https://covidtracker.com">covidtracker.com</a>

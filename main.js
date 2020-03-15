@@ -6,16 +6,30 @@ function parseDate(date) {
     const month = (date / 100) | 0;
     date -= month * 100;
     const day = date;
-    return new Date(year, month - 1, day);
+    return new Date(Date.UTC(year, month - 1, day));
 }
 
 function unique(array) {
     return array.filter((value, index) => array.indexOf(value) === index);
 }
 
-function plot(data, state, type) {
+
+function plot(data, state, type, predicted_days) {
+    // don't mutate the data we're passed
+    data = data.slice();
+
     // track previous value
     data.forEach((d, i) => d.previous = !i ? d : data[i - 1]);
+
+    // fit curve
+    let model = d3.regressionExp()(data.map(d => [(d.date - data[0].date) / 86400000, d.value]));
+
+    // predict an additional number of days if requested
+    let previous = data[data.length - 1];
+    for (let i = 0; i < predicted_days; ++i) {
+        data.push({ date: new Date(previous.date.getTime() + 86400000), value: model.predict(data.length) | 0, previous: previous, predicted: true });
+        previous = data[data.length - 1];
+    }
 
     const div = document.getElementById('graph');
 
@@ -140,6 +154,7 @@ const fetches = Promise.all([load('https://covidtracking.com/api/states/daily'),
 window.onload = () => {
     const ui_state = document.getElementById('state');
     const ui_type = document.getElementById('type');
+    const ui_predict = document.getElementById('predict');
     fetches.then(datasets => {
         const data = datasets.flat();
         // extract list of states from the data, move 'all' to the top,  and set to the default 'all'
@@ -156,11 +171,12 @@ window.onload = () => {
         const refresh = () => {
             const selected_data = data.filter(d => d.state === ui_state.value);
             const selected_type = ui_type.value;
-            plot(selected_data.map(d => ({ date: d.date, value: d[selected_type] })), ui_state.value, selected_type);
+            plot(selected_data.map(d => ({ date: d.date, value: d[selected_type] })), ui_state.value, selected_type, ui_predict.value);
         };
         // call refresh if UI settings change
         ui_state.addEventListener('change', refresh);
         ui_type.addEventListener('change', refresh);
+        ui_predict.addEventListener('change', refresh);
         // also refresh if the window size changes
         window.addEventListener('resize', refresh);
         // initial paint

@@ -14,6 +14,12 @@ function unique(array) {
 }
 
 function plot(data, state, type) {
+    // eliminate null values
+    data.forEach(d => d.value = !d.value ? 0 : d.value);
+
+    // track previous value
+    data.forEach((d, i) => d.previous = !i ? d : data[i - 1]);
+
     const div = document.getElementById('graph');
 
     // remove anything we might have drawn before
@@ -60,7 +66,7 @@ function plot(data, state, type) {
     graph.append('path')
         .datum(data)
         .attr('fill', 'none')
-        .attr('stroke', 'red')
+        .attr('stroke', 'black')
         .attr('stroke-width', 5)
         .attr('stroke-linejoin', 'round')
         .attr('stroke-linecap', 'round')
@@ -72,20 +78,38 @@ function plot(data, state, type) {
         .selectAll('circle')
         .data(data)
         .join('circle')
-        .attr('fill', 'red')
+        .attr('fill', 'black')
         .attr('cx', d => x(d.date))
         .attr('cy', d => y(d.value))
         .attr('r', 5);
 
     graph.append('g')
-        .selectAll('text')
+        .selectAll('text.value')
         .data(data)
         .join('text')
+        .attr('class', 'value')
+        .filter((d, i) => i > 0)
         .text(d => d.value)
+        .attr('font-weight', 'bold')
         .attr('text-anchor', 'end')
         .attr('alignment-baseline', 'after-edge')
         .attr('x', d => x(d.date))
         .attr('y', d => y(d.value) - height / 100);
+
+    graph.append('g')
+        .selectAll('text.delta')
+        .data(data)
+        .join('text')
+        .attr('class', 'delta')
+        .filter(d => d.previous.value && d.previous.value !== d.value)
+        .text((d, i) => (((d.value - d.previous.value) / d.previous.value * 100) | 0) + '%')
+        .attr('font-weight', 'lighter')
+        .attr('font-size', '14px')
+        .attr('fill', d => (d.value > d.previous.value) ? 'red' : 'green')
+        .attr('text-anchor', 'end')
+        .attr('alignment-baseline', 'after-edge')
+        .attr('x', d => (x(d.date) + x(d.previous.date)) / 2)
+        .attr('y', d => (y(d.value) + y(d.previous.value)) / 2 - height / 100);
 }
 
 function preprocess_covid_data(data) {

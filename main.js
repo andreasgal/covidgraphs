@@ -34,8 +34,6 @@ function plot(data, state, type, predicted_days) {
         previous = data[data.length - 1];
     }
 
-    console.log(data);
-
     const div = document.getElementById('graph');
 
     // remove anything we might have drawn before
@@ -187,6 +185,14 @@ window.onload = () => {
             const selected_type = ui_type.value;
             plot(selected_data.map(d => ({ date: d.date, value: d[selected_type] })), ui_state.value, selected_type, ui_predict.value);
         };
+        // set default values according to parameters
+        window.location.hash.substr(1).split('&').map(p => {
+            let [key, value] = p.split('=');
+            let element = document.getElementById(key);
+            if (element) {
+                element.value = value;
+            }
+        });
         // call refresh if UI settings change
         ui_state.addEventListener('change', refresh);
         ui_type.addEventListener('change', refresh);

@@ -14,9 +14,6 @@ function unique(array) {
 }
 
 function plot(data, state, type) {
-    // eliminate null values
-    data.forEach(d => d.value = !d.value ? 0 : d.value);
-
     // track previous value
     data.forEach((d, i) => d.previous = !i ? d : data[i - 1]);
 

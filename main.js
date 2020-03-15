@@ -21,15 +21,20 @@ function plot(data, state, type, predicted_days) {
     // track previous value
     data.forEach((d, i) => d.previous = !i ? d : data[i - 1]);
 
+    // length of the actual data (before prediction)
+    const actual_data_length = data.length;
+
     // fit curve
     let model = d3.regressionExp()(data.map(d => [(d.date - data[0].date) / 86400000, d.value]));
 
     // predict an additional number of days if requested
     let previous = data[data.length - 1];
     for (let i = 0; i < predicted_days; ++i) {
-        data.push({ date: new Date(previous.date.getTime() + 86400000), value: model.predict(data.length) | 0, previous: previous, predicted: true });
+        data.push({ date: new Date(previous.date.getTime() + 86400000), value: model.predict(data.length) | 0, previous: previous });
         previous = data[data.length - 1];
     }
+
+    console.log(data);
 
     const div = document.getElementById('graph');
 
@@ -74,16 +79,25 @@ function plot(data, state, type, predicted_days) {
 
     const graph = svg.append('g');
 
-    graph.append('path')
-        .datum(data)
+    const line = d3.line()
+          .x(d => x(d.date))
+          .y(d => y(d.value));
+
+    const plot = svg.append('g')
         .attr('fill', 'none')
         .attr('stroke', 'black')
         .attr('stroke-width', 5)
         .attr('stroke-linejoin', 'round')
-        .attr('stroke-linecap', 'round')
-        .attr('d', d3.line()
-              .x(d => x(d.date))
-              .y(d => y(d.value)))
+        .attr('stroke-linecap', 'round');
+
+    plot.append('path')
+        .datum(data.filter((d, i) => i < actual_data_length))
+        .attr('d', line);
+
+    plot.append('path')
+        .datum(data.filter((d, i) => i >= actual_data_length - 1))
+        .attr('stroke-dasharray', '7,7')
+        .attr('d', line);
 
     graph.append('g')
         .selectAll('circle')

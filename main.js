@@ -66,20 +66,24 @@ function plot(data, state, type) {
         .attr('stroke-linecap', 'round')
         .attr('d', d3.line()
               .x(d => x(d.date))
-              .y(d => y(d.value)));
-    graph.selectAll('circle')
+              .y(d => y(d.value)))
+
+    graph.append('g')
+        .selectAll('circle')
         .data(data)
-        .enter().append('circle')
+        .join('circle')
         .attr('fill', 'red')
-        .attr('r', 5)
         .attr('cx', d => x(d.date))
-        .attr('cy', d => y(d.value));
-    graph.selectAll('text')
+        .attr('cy', d => y(d.value))
+        .attr('r', 5);
+
+    graph.append('g')
+        .selectAll('text')
         .data(data)
-        .enter().append('text')
+        .join('text')
+        .text(d => d.value)
         .attr('text-anchor', 'end')
         .attr('alignment-baseline', 'after-edge')
-        .text(d => d.value)
         .attr('x', d => x(d.date))
         .attr('y', d => y(d.value) - height / 100);
 }

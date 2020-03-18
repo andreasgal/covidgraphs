@@ -25,7 +25,7 @@ function plot(data, state, type, predicted_days) {
     const actual_data_length = data.length;
 
     // fit curve
-    let model = d3.regressionExp()(data.map(d => [(d.date - data[0].date) / 86400000, d.value]));
+    let model = d3.regressionExp()(data.filter(d => d.value !== null).map(d => [(d.date - data[0].date) / 86400000, d.value]));
 
     // predict an additional number of days if requested
     let previous = data[data.length - 1];

@@ -75,13 +75,7 @@ function plot(data, state, type, predicted_days) {
         .attr('transform', `translate(${margin.left}, 0)`)
         .call(d3.axisLeft().scale(y));
 
-    const graph = svg.append('g');
-
-    const line = d3.line()
-          .x(d => x(d.date))
-          .y(d => y(d.value));
-
-    graph.append('g')
+    svg.append('g')
         .attr('fill', 'none')
         .attr('stroke', 'black')
         .attr('stroke-width', 5)
@@ -93,9 +87,9 @@ function plot(data, state, type, predicted_days) {
         .attr('y1', (d, i) => y(data[Math.max(i - 1, 0)].value))
         .attr('x2', d => x(d.date))
         .attr('y2', d => y(d.value))
-        .attr('stroke-dasharray', (d, i) => (i < actual_data_length) ? '0,0' : '7,7');
+        .attr('stroke-dasharray', (d, i) => (i < actual_data_length) ? '0,0' : '7,7')
 
-    graph.append('g')
+    svg.append('g')
         .selectAll('circle')
         .data(data)
         .join('circle')
@@ -104,7 +98,7 @@ function plot(data, state, type, predicted_days) {
         .attr('cy', d => y(d.value))
         .attr('r', 5);
 
-    graph.append('g')
+    svg.append('g')
         .selectAll('text.value')
         .data(data)
         .join('text')
@@ -117,7 +111,7 @@ function plot(data, state, type, predicted_days) {
         .attr('x', d => x(d.date))
         .attr('y', d => y(d.value) - height / 100);
 
-    graph.append('g')
+    svg.append('g')
         .selectAll('text.delta')
         .data(data)
         .join('text')

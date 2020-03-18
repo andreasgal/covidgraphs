@@ -81,13 +81,12 @@ function plot(data, state, type, predicted_days) {
           .x(d => x(d.date))
           .y(d => y(d.value));
 
-    const plot = svg.append('g')
+    graph.append('g')
         .attr('fill', 'none')
         .attr('stroke', 'black')
         .attr('stroke-width', 5)
-        .attr('stroke-linecap', 'round');
-
-    plot.selectAll('line')
+        .attr('stroke-linecap', 'round')
+        .selectAll('line')
         .data(data)
         .join('line')
         .attr('x1', (d, i) => x(data[Math.max(i - 1, 0)].date))

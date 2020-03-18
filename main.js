@@ -85,17 +85,16 @@ function plot(data, state, type, predicted_days) {
         .attr('fill', 'none')
         .attr('stroke', 'black')
         .attr('stroke-width', 5)
-        .attr('stroke-linejoin', 'round')
         .attr('stroke-linecap', 'round');
 
-    plot.append('path')
-        .datum(data.filter((d, i) => i < actual_data_length))
-        .attr('d', line);
-
-    plot.append('path')
-        .datum(data.filter((d, i) => i >= actual_data_length - 1))
-        .attr('stroke-dasharray', '7,7')
-        .attr('d', line);
+    plot.selectAll('line')
+        .data(data)
+        .join('line')
+        .attr('x1', (d, i) => x(data[Math.max(i - 1, 0)].date))
+        .attr('y1', (d, i) => y(data[Math.max(i - 1, 0)].value))
+        .attr('x2', d => x(d.date))
+        .attr('y2', d => y(d.value))
+        .attr('stroke-dasharray', (d, i) => (i < actual_data_length) ? '0,0' : '7,7');
 
     graph.append('g')
         .selectAll('circle')

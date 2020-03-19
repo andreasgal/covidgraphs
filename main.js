@@ -33,7 +33,10 @@ function predict(data, days) {
     return data;
 }
 
-function map(div, data, state, value) {
+function map(div, data, value) {
+    // don't mutate the data we're passed
+    data = data.slice().filter(d => d.state !== 'all');
+
     // remove anything we might have drawn before
     d3.select(div).selectAll('*').remove();
 
@@ -45,25 +48,37 @@ function map(div, data, state, value) {
           .attr('width', width)
           .attr('height', height);
 
-    Promise.all(['https://covidgraphs.com/us-states.json', 'https://covidgraphs.com/us-states.geojson'].map(url => d3.json(url))).then(results => {
-        const [state_names, geo] = results;
+    const max_value = Math.max.apply(null, data.map(d => d[value] | 0));
 
-        const projection = d3.geoAlbersUsa()
-              .translate([width/2, height/2])
-              .scale(width * 0.8);
-        const path = d3.geoPath().projection(projection);
+    Promise.all(['https://covidgraphs.com/us-states.json',
+                 'https://raw.githubusercontent.com/andreasgal/covidgraphs/master/us-states-map.json']
+                .map(url => d3.json(url)))
+        .then(results => {
+            const [state_abbreviations, geo] = results;
+            const states = Object.fromEntries(Object.entries(state_abbreviations).map(x => [x[1].toLowerCase(), x[0]]));
 
-        const g = svg.append('g');
+            const projection = d3.geoAlbersUsa()
+                  .translate([width/2, height/2])
+                  .scale(width * 0.8);
+            const path = d3.geoPath().projection(projection);
 
-        console.log(geo.features);
+            const g = svg.append('g');
 
-        g.selectAll('path')
-            .data(geo.features)
-            .join('path')
-            .attr('d', data => path(data))
-            .attr('fill', 'lightgray')
-            .attr('stroke', 'white');
-    });
+            g.selectAll('path')
+                .data(geo.features)
+                .join('path')
+                .attr('d', d => path(d))
+                .attr('fill', d => {
+                    let state = states[d.properties.name.toLowerCase()];
+                    let state_data = data.filter(d => d.state === state);
+                    let latest_time = Math.max.apply(null, state_data.map(d => d.date.getTime()));
+                    let state_latest = state_data.filter(d => d.date.getTime() === latest_time)[0];
+                    let color = (255 * state_latest[value] / max_value) | 0;
+                    return 'rgb(255, ' + (255 - color) + ', 0)';
+                })
+                .attr('stroke', 'black')
+                .attr('stroke-width', 3);
+        });
 }
 
 function plot(div, data, state, value) {
@@ -211,13 +226,15 @@ window.onload = () => {
             const ui = Object.fromEntries(Array.prototype.map.call(document.querySelectorAll('select'), element => [element.id, element.value]));
             ui.value = document.getElementById('value').value;
             ui.predict = document.getElementById('predict').value;
-            const combined_data = predict(data.filter(d => d.state === ui.state).map(d => ({ date: d.date, value: d[ui.value] })), ui.predict);
             switch (ui.type) {
             case 'map':
-                map(div, combined_data, ui.value);
+                map(div, data, ui.value);
                 break;
             case 'plot':
-                plot(div, combined_data, ui.state, ui.value);
+                plot(div,
+                     predict(data.filter(d => d.state === ui.state).map(d => ({ date: d.date, value: d[ui.value] })), ui.predict),
+                     ui.state,
+                     ui.value);
                 break;
             }
         };

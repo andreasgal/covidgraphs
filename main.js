@@ -47,18 +47,7 @@ function predict(data) {
     }).flat();
 }
 
-function map(div, data, value, date) {
-    // remove anything we might have drawn before
-    d3.select(div).selectAll('*').remove();
-
-    // add an SVG element covering the full size of the div
-    const width = div.clientWidth;
-    const height = div.clientHeight;
-    const svg = d3.select(div)
-          .append('svg')
-          .attr('width', width)
-          .attr('height', height);
-
+function map(svg, width, height, data, value, date) {
     // filter out the selected date
     data = data.filter(d => d.date.getTime() == date);
 
@@ -96,7 +85,7 @@ function map(div, data, value, date) {
         });
 }
 
-function plot(div, data, state, value, predict) {
+function plot(svg, width, height, data, state, value, predict) {
     // focus on the desired state only
     data = data.filter(d => d.state === state);
 
@@ -104,17 +93,6 @@ function plot(div, data, state, value, predict) {
 
     // return the desired slice of the data
     data = data.slice(0, actual + (predict * 1));
-
-    // remove anything we might have drawn before
-    d3.select(div).selectAll('*').remove();
-
-    // add an SVG element covering the full size of the div
-    const width = div.clientWidth;
-    const height = div.clientHeight;
-    const svg = d3.select(div)
-          .append('svg')
-          .attr('width', width)
-          .attr('height', height);
 
     const margin = ({top: height / 10, right: width / 15, bottom: height / 8, left: width / 15});
 
@@ -250,22 +228,32 @@ window.onload = () => {
 
         // refresh handler (also used for the initial paint)
         const refresh = () => {
-            const div = document.getElementById('graph');
+            // UI handling
             const ui = Object.fromEntries(Array.prototype.map.call(document.querySelectorAll('select'), element => [element.id, element.value]));
             document.querySelectorAll('select, label').forEach(element => element.hidden = false);
             document.querySelectorAll('#state, label[for="state"]').forEach(e => e.hidden = (ui.type === 'map'));
             document.querySelectorAll('#date, label[for="date"]').forEach(e => e.hidden = (ui.type !== 'map'));
             document.querySelectorAll('#predict, label[for="predict"]').forEach(e => e.hidden = (ui.type !== 'plot' || (ui.value !== 'positive' && ui.value !== 'death')));
+
+            const div = document.getElementById('graph');
+
+            // remove anything we might have drawn before
+            d3.select(div).selectAll('*').remove();
+
+            // add an SVG element covering the full size of the div
+            const width = div.clientWidth;
+            const height = div.clientHeight;
+            const svg = d3.select(div)
+                  .append('svg')
+                  .attr('width', width)
+                  .attr('height', height);
+
             switch (ui.type) {
             case 'map':
-                map(div, data, ui.value, ui.date);
+                map(svg, width, height, data, ui.value, ui.date);
                 break;
             case 'plot':
-                plot(div,
-                     data,
-                     ui.state,
-                     ui.value,
-                     ui.predict);
+                plot(svg, width, height, data, ui.state, ui.value, ui.predict);
                 break;
             }
         };

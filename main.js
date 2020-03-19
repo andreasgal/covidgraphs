@@ -92,6 +92,8 @@ function plot(svg, width, height, data, state, value, predict) {
     const actual = data.filter(d => !('predicted' in d)).length;
 
     // return the desired slice of the data
+    if (value !== 'positive' && value !== 'death')
+        predict = 0;
     data = data.slice(0, actual + (predict * 1));
 
     const margin = ({top: height / 10, right: width / 15, bottom: height / 8, left: width / 15});

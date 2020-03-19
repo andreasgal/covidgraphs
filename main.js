@@ -22,17 +22,23 @@ function predict(data, value) {
         // track previous value
         result.forEach((d, i) => d.previous = !i ? d : result[i - 1]);
 
+        // add predicted entries
+        let previous = result[result.length - 1];
+        for (let i = 0; i < 31; ++i) {
+            let entry = ({ date: new Date(previous.date.getTime() + 86400000), state: state, previous: previous, predicted: true });
+            result.push(entry);
+            previous = result[result.length - 1];
+        }
+
         // fit curve
         let model = d3.regressionExp()(result.filter(d => d[value] !== null).map(d => [(d.date - result[0].date) / 86400000, d[value]]));
 
         // predict an additional number of days if requested
-        let previous = result[result.length - 1];
-        for (let i = 0; i < 31; ++i) {
-            let entry = ({ date: new Date(previous.date.getTime() + 86400000), state: state, previous: previous, predicted: true });
-            entry[value] = model.predict(result.length) | 0;
-            result.push(entry);
-            previous = result[result.length - 1];
-        }
+        result.forEach((d, i) => {
+            if (d.predicted) {
+                d[value] = model.predict(i) | 0;
+            }
+        });
 
         return result;
     }).flat();

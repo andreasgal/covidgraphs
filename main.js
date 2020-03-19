@@ -224,7 +224,7 @@ window.onload = () => {
         const refresh = () => {
             const div = document.getElementById('graph');
             const ui = Object.fromEntries(Array.prototype.map.call(document.querySelectorAll('select'), element => [element.id, element.value]));
-            document.getElementById('state').disabled = (ui.type === 'map');
+            document.getElementById('state').hidden = (ui.type === 'map');
             switch (ui.type) {
             case 'map':
                 map(div, data, ui.value);
@@ -237,7 +237,7 @@ window.onload = () => {
                 break;
             }
         };
-        // set default values according to parameters
+
         window.location.hash.substr(1).split('&').map(p => {
             let [key, value] = p.split('=');
             let element = document.getElementById(key);
@@ -245,6 +245,7 @@ window.onload = () => {
                 element.value = value;
             }
         });
+
         // call refresh if UI settings change
         document.querySelectorAll('select').forEach(select => select.addEventListener('change', refresh));
         // also refresh if the window size changes

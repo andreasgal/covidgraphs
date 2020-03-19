@@ -47,13 +47,6 @@ function predict(data) {
     }).flat();
 }
 
-function animate(selection) {
-    return selection.attr('opacity', 0)
-        .transition()
-        .delay(500)
-        .attr('opacity', 1);
-}
-
 function map(div, data, value, date) {
     // remove anything we might have drawn before
     d3.select(div).selectAll('*').remove();
@@ -64,8 +57,7 @@ function map(div, data, value, date) {
     const svg = d3.select(div)
           .append('svg')
           .attr('width', width)
-          .attr('height', height)
-          .call(animate);
+          .attr('height', height);
 
     // filter out the selected date
     data = data.filter(d => d.date.getTime() == date);
@@ -122,8 +114,7 @@ function plot(div, data, state, value, predict) {
     const svg = d3.select(div)
           .append('svg')
           .attr('width', width)
-          .attr('height', height)
-          .call(animate);
+          .attr('height', height);
 
     const margin = ({top: height / 10, right: width / 15, bottom: height / 8, left: width / 15});
 

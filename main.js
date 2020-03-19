@@ -194,16 +194,8 @@ function preprocess_covid_data(data) {
     return result.sort((a, b) => a.date - b.date);
 }
 
-function load(url) {
-    return fetch(url)
-        .then(response => response.json())
-        .catch((error) => {
-            console.log(error);
-        });
-}
-
 function load_covid(url) {
-    return load(url).then(data => preprocess_covid_data(data));
+    return d3.json(url).then(data => preprocess_covid_data(data));
 }
 
 // once the window is loaded we can process the data

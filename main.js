@@ -13,24 +13,29 @@ function unique(array) {
     return array.filter((value, index) => array.indexOf(value) === index);
 }
 
-function predict(data, days) {
-    // don't mutate the data we're passed
-    data = data.slice();
+function predict(data, value) {
+    const states = unique(data.map(d => d.state));
+    return states.map(state => {
+        // process each state at a time
+        let result = data.filter(d => d.state === state);
 
-    // track previous value
-    data.forEach((d, i) => d.previous = !i ? d : data[i - 1]);
+        // track previous value
+        result.forEach((d, i) => d.previous = !i ? d : result[i - 1]);
 
-    // fit curve
-    let model = d3.regressionExp()(data.filter(d => d.value !== null).map(d => [(d.date - data[0].date) / 86400000, d.value]));
+        // fit curve
+        let model = d3.regressionExp()(result.filter(d => d[value] !== null).map(d => [(d.date - result[0].date) / 86400000, d[value]]));
 
-    // predict an additional number of days if requested
-    let previous = data[data.length - 1];
-    for (let i = 0; i < days; ++i) {
-        data.push({ date: new Date(previous.date.getTime() + 86400000), value: model.predict(data.length) | 0, previous: previous, predicted: true });
-        previous = data[data.length - 1];
-    }
+        // predict an additional number of days if requested
+        let previous = result[result.length - 1];
+        for (let i = 0; i < 31; ++i) {
+            let entry = ({ date: new Date(previous.date.getTime() + 86400000), state: state, previous: previous, predicted: true });
+            entry[value] = model.predict(result.length) | 0;
+            result.push(entry);
+            previous = result[result.length - 1];
+        }
 
-    return data;
+        return result;
+    }).flat();
 }
 
 function map(div, data, value, date) {
@@ -85,7 +90,15 @@ function map(div, data, value, date) {
         });
 }
 
-function plot(div, data, state, value) {
+function plot(div, data, state, value, predict) {
+    // focus on the desired state only
+    data = data.filter(d => d.state === state);
+
+    const actual = data.filter(d => !('predicted' in d)).length;
+
+    // return the desired slice of the data
+    data = data.slice(0, actual + (predict * 1));
+
     // remove anything we might have drawn before
     d3.select(div).selectAll('*').remove();
 
@@ -103,7 +116,7 @@ function plot(div, data, state, value) {
           .domain(d3.extent(data.map(d => d.date)))
           .range([margin.left, width - margin.right]);
     const y = d3.scaleLinear()
-          .domain(d3.extent([].concat([0], data.map(d => d.value))))
+          .domain(d3.extent([].concat([0], data.map(d => d[value]))))
           .range([height - margin.bottom, margin.top]);
 
     svg.append('text')
@@ -141,9 +154,9 @@ function plot(div, data, state, value) {
         .data(data)
         .join('line')
         .attr('x1', (d, i) => x(data[Math.max(i - 1, 0)].date))
-        .attr('y1', (d, i) => y(data[Math.max(i - 1, 0)].value))
+        .attr('y1', (d, i) => y(data[Math.max(i - 1, 0)][value]))
         .attr('x2', d => x(d.date))
-        .attr('y2', d => y(d.value))
+        .attr('y2', d => y(d[value]))
         .attr('stroke-dasharray', d => d.predicted ? '7,7' : '0,0')
         .call(animate, 0);
 
@@ -153,7 +166,7 @@ function plot(div, data, state, value) {
         .join('circle')
         .attr('fill', 'black')
         .attr('cx', d => x(d.date))
-        .attr('cy', d => y(d.value))
+        .attr('cy', d => y(d[value]))
         .attr('r', 5)
         .call(animate, 0);
 
@@ -163,12 +176,12 @@ function plot(div, data, state, value) {
         .join('text')
         .attr('class', 'value')
         .filter((d, i) => i > 0)
-        .text(d => d.value)
+        .text(d => d[value])
         .attr('font-weight', 'bold')
         .attr('text-anchor', 'end')
         .attr('alignment-baseline', 'after-edge')
         .attr('x', d => x(d.date))
-        .attr('y', d => y(d.value) - height / 100)
+        .attr('y', d => y(d[value]) - height / 100)
         .call(animate, 0);
 
     svg.append('g')
@@ -176,15 +189,15 @@ function plot(div, data, state, value) {
         .data(data)
         .join('text')
         .attr('class', 'delta')
-        .filter(d => d.previous.value && d.previous.value !== d.value)
-        .text((d, i) => (((d.value - d.previous.value) / d.previous.value * 100) | 0) + '%')
+        .filter(d => d.previous[value] && d.previous[value] !== d[value])
+        .text((d, i) => (((d[value] - d.previous[value]) / d.previous[value] * 100) | 0) + '%')
         .attr('font-weight', 'lighter')
         .attr('font-size', '14px')
-        .attr('fill', d => (d.value > d.previous.value) ? 'red' : 'green')
+        .attr('fill', d => (d[value] > d.previous[value]) ? 'red' : 'green')
         .attr('text-anchor', 'end')
         .attr('alignment-baseline', 'after-edge')
         .attr('x', d => (x(d.date) + x(d.previous.date)) / 2)
-        .attr('y', d => (y(d.value) + y(d.previous.value)) / 2 - height / 100)
+        .attr('y', d => (y(d[value]) + y(d.previous[value])) / 2 - height / 100)
         .call(animate, 0);
 }
 
@@ -238,15 +251,17 @@ window.onload = () => {
             const ui = Object.fromEntries(Array.prototype.map.call(document.querySelectorAll('select'), element => [element.id, element.value]));
             document.querySelectorAll('#state, label[for="state"]').forEach(e => e.hidden = (ui.type === 'map'));
             document.querySelectorAll('#date, label[for="date"]').forEach(e => e.hidden = (ui.type !== 'map'));
+            document.querySelectorAll('#predict, label[for="predict"]').forEach(e => e.hidden = (ui.value !== 'positive' && ui.value !== 'death'));
             switch (ui.type) {
             case 'map':
                 map(div, data, ui.value, ui.date);
                 break;
             case 'plot':
                 plot(div,
-                     predict(data.filter(d => d.state === ui.state).map(d => ({ date: d.date, value: d[ui.value] })), ui.predict),
+                     predict(data.filter(d => d.state === ui.state), ui.value),
                      ui.state,
-                     ui.value);
+                     ui.value,
+                     ui.predict);
                 break;
             }
         };

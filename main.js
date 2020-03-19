@@ -45,42 +45,23 @@ function map(div, data, state, value) {
           .attr('width', width)
           .attr('height', height);
 
-    const g = svg.append('g');
-
-    const projection = d3.geoAlbersUsa()
-          .translate([width/2, height/2])
-          .scale(1000);
-    const path = d3.geoPath().projection(projection);
-
     d3.json('https://covidgraphs.com/us-states.json').then(geo => {
-        svg.append('path')
-            .attr('d', path(geo))
+        const projection = d3.geoAlbersUsa()
+              .translate([width/2, height/2])
+              .scale(width * 0.8);
+        const path = d3.geoPath().projection(projection);
+
+        const g = svg.append('g');
+
+        console.log(geo.features);
+
+        g.selectAll('path')
+            .data(geo.features)
+            .join('path')
+            .attr('d', data => path(data))
             .attr('fill', 'lightgray')
             .attr('stroke', 'white');
     });
-    /*
-    console.log(albers);
-    g.selectAll("path")
-        .data(topojson.object(albers, albers.objects.states).geometries)
-        .enter()
-        .append("path")
-        .attr("d", path)
-    */
-
-    /*
-    const path = d3.geo.path().projection(projection);
-    console.log(path);
-
-    svg.selectAll("path")
-	.append("path")
-	.attr("d", path)
-	.style("stroke", "#fff")
-	.style("stroke-width", "1")
-	.style("fill", d => {
-            console.log(d);
-            return 'rgb(213,222,217)';
-        });
-    */
 }
 
 function plot(div, data, state, value) {

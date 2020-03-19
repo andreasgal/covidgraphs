@@ -24,7 +24,7 @@ function predict(data) {
 
         // add predicted entries
         let previous = result[result.length - 1];
-        for (let i = 0; i < 31; ++i) {
+        for (let i = 0; i < 42; ++i) {
             let entry = ({ date: new Date(previous.date.getTime() + 86400000), state: state, previous: previous, predicted: true });
             result.push(entry);
             previous = result[result.length - 1];

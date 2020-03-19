@@ -62,8 +62,7 @@ function map(div, data, value, date) {
           .attr('width', width)
           .attr('height', height);
 
-    // calculate the maximum value for any state (we use it as deep red)
-    const max_value = Math.max.apply(null, data.map(d => d[value] | 0));
+    const max_value = (value === 'positive') ? 2000 : 100;
 
     // filter out the selected date
     data = data.filter(d => d.date.getTime() == date);
@@ -91,7 +90,7 @@ function map(div, data, value, date) {
                     let state_data = data.filter(d => d.state === state);
                     let latest_time = Math.max.apply(null, state_data.map(d => d.date.getTime()));
                     let state_latest = state_data.filter(d => d.date.getTime() === latest_time)[0];
-                    let color = (255 * state_latest[value] / max_value) | 0;
+                    let color = Math.max(0, Math.min(255, (255 * state_latest[value] / max_value) | 0));
                     return 'rgb(255, ' + (255 - color) + ', 0)';
                 })
                 .attr('stroke', 'black')
@@ -251,9 +250,13 @@ window.onload = () => {
 
         // extract the dates in the data
         const dates = unique(data.map(d => d.date.getTime())).sort();
-        const latest = dates[dates.length - 1];
+        const latest = Math.max.apply(null, data.filter(d => !('predicted' in d)).map(d => d.date.getTime()));
         document.getElementById('date').innerHTML =
-            dates.map(t => '<option value=' + t + ' ' + ((t === latest) ? 'selected' : '') + '>' + (new Date(t).toLocaleDateString()) + '</option>').join('');
+            dates.map(t => '<option value=' + t + ' ' +
+                      ((t === latest) ? 'selected' : '') +
+                      '>' + (new Date(t).toLocaleDateString()) +
+                      ((t > latest) ? ' (predicted)' : '') +
+                      '</option>').join('');
 
         // refresh handler (also used for the initial paint)
         const refresh = () => {
@@ -261,7 +264,7 @@ window.onload = () => {
             const ui = Object.fromEntries(Array.prototype.map.call(document.querySelectorAll('select'), element => [element.id, element.value]));
             document.querySelectorAll('#state, label[for="state"]').forEach(e => e.hidden = (ui.type === 'map'));
             document.querySelectorAll('#date, label[for="date"]').forEach(e => e.hidden = (ui.type !== 'map'));
-            document.querySelectorAll('#predict, label[for="predict"]').forEach(e => e.hidden = (ui.value !== 'positive' && ui.value !== 'death'));
+            document.querySelectorAll('#predict, label[for="predict"]').forEach(e => e.hidden = (ui.type !== 'plot' || (ui.value !== 'positive' && ui.value !== 'death')));
             switch (ui.type) {
             case 'map':
                 map(div, data, ui.value, ui.date);

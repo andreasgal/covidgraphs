@@ -33,7 +33,7 @@ function predict(data, days) {
     return data;
 }
 
-function plot(data, state, type) {
+function plot(data, state, value) {
     const div = document.getElementById('graph');
 
     // remove anything we might have drawn before
@@ -61,7 +61,7 @@ function plot(data, state, type) {
         .attr('y', margin.top / 2)
         .attr('text-anchor', 'middle')
         .style('font-size', '24px')
-        .text('COVID-19 ' + type + ' tests (' + ((state === 'all') ? 'United States' : state) + ')')
+        .text('COVID-19 ' + value + ' (' + ((state === 'all') ? 'United States' : state) + ')')
 
     const animate = ((selection, duration) => {
         selection.attr('opacity', 0)
@@ -168,7 +168,7 @@ const fetches = Promise.all([load('https://covidtracking.com/api/states/daily'),
 // once the window is loaded we can process the data
 window.onload = () => {
     const ui_state = document.getElementById('state');
-    const ui_type = document.getElementById('type');
+    const ui_value = document.getElementById('value');
     const ui_predict = document.getElementById('predict');
     fetches.then(datasets => {
         const data = datasets.flat();
@@ -177,17 +177,17 @@ window.onload = () => {
         ui_state.innerHTML =
             states.map(state => '<option value="' + state + '" ' + ((state === 'all') ? 'selected' : '') + '>' +
                        state + '</option>').join('');
-        // extract types of cases
-        const types = Object.keys(data[0]).filter(k => k !== 'date' && k !== 'state');
-        ui_type.innerHTML =
-            types.map(type => '<option value="' + type + '" ' + ((type === 'positive') ? 'selected' : '') + '>' +
-                      ((type !== 'death') ? 'Tested ' + type : 'Deaths') + '</option>').join('');
+        // extract the value to visualize
+        const values = Object.keys(data[0]).filter(k => k !== 'date' && k !== 'state');
+        ui_value.innerHTML =
+            values.filter(value => value !== 'dateChecked').map(value => '<option value="' + value + '" ' + ((value === 'positive') ? 'selected' : '') + '>' +
+                                                                ((value !== 'death') ? 'Tested ' + value : 'Deaths') + '</option>').join('');
         // refresh handler (also used for the initial paint)
         const refresh = () => {
             const selected_data = data.filter(d => d.state === ui_state.value);
-            const selected_type = ui_type.value;
-            const combined_data = predict(selected_data.map(d => ({ date: d.date, value: d[selected_type] })), ui_predict.value);
-            plot(combined_data, ui_state.value, selected_type);
+            const selected_value = ui_value.value;
+            const combined_data = predict(selected_data.map(d => ({ date: d.date, value: d[selected_value] })), ui_predict.value);
+            plot(combined_data, ui_state.value, selected_value);
         };
         // set default values according to parameters
         window.location.hash.substr(1).split('&').map(p => {
@@ -198,9 +198,7 @@ window.onload = () => {
             }
         });
         // call refresh if UI settings change
-        ui_state.addEventListener('change', refresh);
-        ui_type.addEventListener('change', refresh);
-        ui_predict.addEventListener('change', refresh);
+        document.querySelectorAll('select').forEach(select => select.addEventListener('change', refresh));
         // also refresh if the window size changes
         window.addEventListener('resize', refresh);
         // initial paint

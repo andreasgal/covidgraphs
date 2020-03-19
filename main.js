@@ -45,7 +45,9 @@ function map(div, data, state, value) {
           .attr('width', width)
           .attr('height', height);
 
-    d3.json('https://covidgraphs.com/us-states.json').then(geo => {
+    Promise.all(['https://covidgraphs.com/us-states.json', 'https://covidgraphs.com/us-states.geojson'].map(url => d3.json(url))).then(results => {
+        const [state_names, geo] = results;
+
         const projection = d3.geoAlbersUsa()
               .translate([width/2, height/2])
               .scale(width * 0.8);

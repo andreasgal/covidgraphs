@@ -13,27 +13,27 @@ function unique(array) {
     return array.filter((value, index) => array.indexOf(value) === index);
 }
 
-
-function plot(data, state, type, predicted_days) {
+function predict(data, days) {
     // don't mutate the data we're passed
     data = data.slice();
 
     // track previous value
     data.forEach((d, i) => d.previous = !i ? d : data[i - 1]);
 
-    // length of the actual data (before prediction)
-    const actual_data_length = data.length;
-
     // fit curve
     let model = d3.regressionExp()(data.filter(d => d.value !== null).map(d => [(d.date - data[0].date) / 86400000, d.value]));
 
     // predict an additional number of days if requested
     let previous = data[data.length - 1];
-    for (let i = 0; i < predicted_days; ++i) {
-        data.push({ date: new Date(previous.date.getTime() + 86400000), value: model.predict(data.length) | 0, previous: previous });
+    for (let i = 0; i < days; ++i) {
+        data.push({ date: new Date(previous.date.getTime() + 86400000), value: model.predict(data.length) | 0, previous: previous, predicted: true });
         previous = data[data.length - 1];
     }
 
+    return data;
+}
+
+function plot(data, state, type) {
     const div = document.getElementById('graph');
 
     // remove anything we might have drawn before
@@ -94,7 +94,7 @@ function plot(data, state, type, predicted_days) {
         .attr('y1', (d, i) => y(data[Math.max(i - 1, 0)].value))
         .attr('x2', d => x(d.date))
         .attr('y2', d => y(d.value))
-        .attr('stroke-dasharray', (d, i) => (i < actual_data_length) ? '0,0' : '7,7')
+        .attr('stroke-dasharray', d => d.predicted ? '7,7' : '0,0')
         .call(animate, 0);
 
     svg.append('g')
@@ -186,7 +186,8 @@ window.onload = () => {
         const refresh = () => {
             const selected_data = data.filter(d => d.state === ui_state.value);
             const selected_type = ui_type.value;
-            plot(selected_data.map(d => ({ date: d.date, value: d[selected_type] })), ui_state.value, selected_type, ui_predict.value);
+            const combined_data = predict(selected_data.map(d => ({ date: d.date, value: d[selected_type] })), ui_predict.value);
+            plot(combined_data, ui_state.value, selected_type);
         };
         // set default values according to parameters
         window.location.hash.substr(1).split('&').map(p => {

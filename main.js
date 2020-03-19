@@ -48,10 +48,16 @@ function map(div, data, state, value) {
     const g = svg.append('g');
 
     const projection = d3.geoAlbersUsa()
-	  .scale(1300)
-	  .translate([width/2, height/2]);
+          .translate([width/2, height/2])
+          .scale(1000);
     const path = d3.geoPath().projection(projection);
 
+    d3.json('https://covidgraphs.com/us-states.json').then(geo => {
+        svg.append('path')
+            .attr('d', path(geo))
+            .attr('fill', 'lightgray')
+            .attr('stroke', 'white');
+    });
     /*
     console.log(albers);
     g.selectAll("path")

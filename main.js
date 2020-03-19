@@ -52,8 +52,8 @@ function map(svg, width, height, data, value, date) {
     data = data.filter(d => d.date.getTime() == date);
 
     // we consider 25% of the cases in a single state really bad
-    const max_value = data.filter(d => d.state === 'all')[0][value];
-    const red_value = (max_value / 4) | 0;
+    const max_count = data.filter(d => d.state === 'all')[0][value];
+    const red_count = (max_count / 4) | 0;
 
     Promise.all(['https://covidgraphs.com/us-states.json', 'https://covidgraphs.com/us-states-map.json']
                 .map(url => d3.json(url)))
@@ -77,7 +77,8 @@ function map(svg, width, height, data, value, date) {
                     let state_data = data.filter(d => d.state === state);
                     let latest_time = Math.max.apply(null, state_data.map(d => d.date.getTime()));
                     let state_latest = state_data.filter(d => d.date.getTime() === latest_time)[0];
-                    let color = Math.max(0, Math.min(255, (255 * state_latest[value] / red_value) | 0));
+                    let count = (state_latest && value in state_latest) ? state_latest[value] : 0;
+                    let color = Math.max(0, Math.min(255, (255 * count / red_count) | 0));
                     return 'rgb(255, ' + (255 - color) + ', 0)';
                 })
                 .attr('stroke', 'black')

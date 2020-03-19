@@ -1,4 +1,4 @@
-use strict';
+'use strict';
 
 function parseDate(date) {
     const year = (date / 10000) | 0;

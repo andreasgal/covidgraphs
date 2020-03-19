@@ -1,4 +1,4 @@
-'use strict';
+use strict';
 
 function parseDate(date) {
     const year = (date / 10000) | 0;
@@ -47,6 +47,13 @@ function predict(data) {
     }).flat();
 }
 
+function animate(selection) {
+    return selection.attr('opacity', 0)
+        .transition()
+        .delay(500)
+        .attr('opacity', 1);
+}
+
 function map(div, data, value, date) {
     // remove anything we might have drawn before
     d3.select(div).selectAll('*').remove();
@@ -57,7 +64,8 @@ function map(div, data, value, date) {
     const svg = d3.select(div)
           .append('svg')
           .attr('width', width)
-          .attr('height', height);
+          .attr('height', height)
+          .call(animate);
 
     // filter out the selected date
     data = data.filter(d => d.date.getTime() == date);
@@ -114,7 +122,8 @@ function plot(div, data, state, value, predict) {
     const svg = d3.select(div)
           .append('svg')
           .attr('width', width)
-          .attr('height', height);
+          .attr('height', height)
+          .call(animate);
 
     const margin = ({top: height / 10, right: width / 15, bottom: height / 8, left: width / 15});
 
@@ -131,13 +140,6 @@ function plot(div, data, state, value, predict) {
         .attr('text-anchor', 'middle')
         .style('font-size', '24px')
         .text('COVID-19 ' + value + ' (' + ((state === 'all') ? 'United States' : state) + ')')
-
-    const animate = ((selection, duration) => {
-        selection.attr('opacity', 0)
-            .transition()
-            .delay((d, i) => duration + 250 / data.length * i)
-            .attr('opacity', 1);
-    });
 
     const font = '14px Helvetica Neue';
 
@@ -163,8 +165,7 @@ function plot(div, data, state, value, predict) {
         .attr('y1', (d, i) => y(data[Math.max(i - 1, 0)][value]))
         .attr('x2', d => x(d.date))
         .attr('y2', d => y(d[value]))
-        .attr('stroke-dasharray', d => d.predicted ? '7,7' : '0,0')
-        .call(animate, 0);
+        .attr('stroke-dasharray', d => d.predicted ? '7,7' : '0,0');
 
     svg.append('g')
         .selectAll('circle')
@@ -173,8 +174,7 @@ function plot(div, data, state, value, predict) {
         .attr('fill', 'black')
         .attr('cx', d => x(d.date))
         .attr('cy', d => y(d[value]))
-        .attr('r', 5)
-        .call(animate, 0);
+        .attr('r', 5);
 
     svg.append('g')
         .selectAll('text.value')
@@ -187,8 +187,7 @@ function plot(div, data, state, value, predict) {
         .attr('text-anchor', 'end')
         .attr('alignment-baseline', 'after-edge')
         .attr('x', d => x(d.date))
-        .attr('y', d => y(d[value]) - height / 100)
-        .call(animate, 0);
+        .attr('y', d => y(d[value]) - height / 100);
 
     svg.append('g')
         .selectAll('text.delta')
@@ -203,8 +202,7 @@ function plot(div, data, state, value, predict) {
         .attr('text-anchor', 'end')
         .attr('alignment-baseline', 'after-edge')
         .attr('x', d => (x(d.date) + x(d.previous.date)) / 2)
-        .attr('y', d => (y(d[value]) + y(d.previous[value])) / 2 - height / 100)
-        .call(animate, 0);
+        .attr('y', d => (y(d[value]) + y(d.previous[value])) / 2 - height / 100);
 }
 
 function preprocess_covid_data(data) {

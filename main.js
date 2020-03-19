@@ -224,6 +224,7 @@ window.onload = () => {
         const refresh = () => {
             const div = document.getElementById('graph');
             const ui = Object.fromEntries(Array.prototype.map.call(document.querySelectorAll('select'), element => [element.id, element.value]));
+            document.getElementById('state').disabled = (ui.type === 'map');
             switch (ui.type) {
             case 'map':
                 map(div, data, ui.value);

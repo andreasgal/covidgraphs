@@ -216,6 +216,9 @@ function load_covid(url) {
 
 // once the window is loaded we can process the data
 window.onload = () => {
+    // hide the UI until we're ready
+    document.querySelectorAll('select, label').forEach(element => element.hidden = true);
+
     Promise.all([
         load_covid('https://covidtracking.com/api/states/daily'),
         load_covid('https://covidtracking.com/api/us/daily'),
@@ -249,6 +252,7 @@ window.onload = () => {
         const refresh = () => {
             const div = document.getElementById('graph');
             const ui = Object.fromEntries(Array.prototype.map.call(document.querySelectorAll('select'), element => [element.id, element.value]));
+            document.querySelectorAll('select, label').forEach(element => element.hidden = false);
             document.querySelectorAll('#state, label[for="state"]').forEach(e => e.hidden = (ui.type === 'map'));
             document.querySelectorAll('#date, label[for="date"]').forEach(e => e.hidden = (ui.type !== 'map'));
             document.querySelectorAll('#predict, label[for="predict"]').forEach(e => e.hidden = (ui.type !== 'plot' || (ui.value !== 'positive' && ui.value !== 'death')));

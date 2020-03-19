@@ -33,9 +33,49 @@ function predict(data, days) {
     return data;
 }
 
-function plot(data, state, value) {
-    const div = document.getElementById('graph');
+function map(div, albers, data, state, value) {
+    // remove anything we might have drawn before
+    d3.select(div).selectAll('*').remove();
 
+    // add an SVG element covering the full size of the div
+    const width = div.clientWidth;
+    const height = div.clientHeight;
+    const svg = d3.select(div)
+          .append('svg')
+          .attr('width', width)
+          .attr('height', height);
+
+    const g = svg.append('g');
+
+    const projection = d3.geoAlbersUsa()
+	  .scale(1300)
+	  .translate([width/2, height/2]);
+    const path = d3.geoPath().projection(projection);
+
+    console.log(albers);
+    g.selectAll("path")
+        .data(topojson.object(albers, albers.objects.states).geometries)
+        .enter()
+        .append("path")
+        .attr("d", path)
+
+    /*
+    const path = d3.geo.path().projection(projection);
+    console.log(path);
+
+    svg.selectAll("path")
+	.append("path")
+	.attr("d", path)
+	.style("stroke", "#fff")
+	.style("stroke-width", "1")
+	.style("fill", d => {
+            console.log(d);
+            return 'rgb(213,222,217)';
+        });
+    */
+}
+
+function plot(div, data, state, value) {
     // remove anything we might have drawn before
     d3.select(div).selectAll('*').remove();
 
@@ -155,23 +195,32 @@ function preprocess_covid_data(data) {
 function load(url) {
     return fetch(url)
         .then(response => response.json())
-        .then(data => preprocess_covid_data(data))
         .catch((error) => {
             console.log(error);
         });
 }
 
+function load_covid(url) {
+    return load(url).then(data => preprocess_covid_data(data));
+}
+
 // Issue a fetch for the COVID data as soon as the script executes
-const fetches = Promise.all([load('https://covidtracking.com/api/states/daily'),
-                             load('https://covidtracking.com/api/us/daily')])
+const fetches = Promise.all([
+    Promise.all([
+        load_covid('https://covidtracking.com/api/states/daily'),
+        load_covid('https://covidtracking.com/api/us/daily'),
+    ]).then(datasets => datasets.flat()),
+    load('https://cdn.jsdelivr.net/npm/us-atlas@3/states-albers-10m.json'),
+]);
 
 // once the window is loaded we can process the data
 window.onload = () => {
+    const ui_type = document.getElementById('type');
     const ui_state = document.getElementById('state');
     const ui_value = document.getElementById('value');
     const ui_predict = document.getElementById('predict');
     fetches.then(datasets => {
-        const data = datasets.flat();
+        const [data, albers] = datasets;
         // extract list of states from the data, move 'all' to the top,  and set to the default 'all'
         const states = [].concat(['all'], unique(data.map(d => d.state)).sort().filter(name => name !== 'all'));
         ui_state.innerHTML =
@@ -184,10 +233,18 @@ window.onload = () => {
                                                                 ((value !== 'death') ? 'Tested ' + value : 'Deaths') + '</option>').join('');
         // refresh handler (also used for the initial paint)
         const refresh = () => {
+            const div = document.getElementById('graph');
             const selected_data = data.filter(d => d.state === ui_state.value);
             const selected_value = ui_value.value;
             const combined_data = predict(selected_data.map(d => ({ date: d.date, value: d[selected_value] })), ui_predict.value);
-            plot(combined_data, ui_state.value, selected_value);
+            switch (ui_type.value) {
+            case 'map':
+                map(div, albers, combined_data, selected_value);
+                break;
+            case 'plot':
+                plot(div, combined_data, ui_state.value, selected_value);
+                break;
+            }
         };
         // set default values according to parameters
         window.location.hash.substr(1).split('&').map(p => {

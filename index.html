@@ -3,12 +3,17 @@
   <head>
     <link rel="stylesheet" type="text/css" href="style.css">
     <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/topojson.v0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/HarryStevens/d3-regression@master/dist/d3-regression.min.js"></script>
     <script src="main.js"></script>
   </head>
   <body>
     <div id="graph"></div>
     <div id="ui">
+      <select id="type">
+      <option value="plot" selected>Plot</option>
+      <option value="map">Map</option>
+      </select>
       <label for="state">Select state:</label>
       <select id="state"></select>
       <select id="value"></select>

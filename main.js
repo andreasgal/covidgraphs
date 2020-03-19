@@ -33,7 +33,7 @@ function predict(data, days) {
     return data;
 }
 
-function map(div, data, value) {
+function map(div, data, value, date) {
     // don't mutate the data we're passed
     data = data.slice().filter(d => d.state !== 'all');
 
@@ -48,7 +48,11 @@ function map(div, data, value) {
           .attr('width', width)
           .attr('height', height);
 
+    // calculate the maximum value for any state (we use it as deep red)
     const max_value = Math.max.apply(null, data.map(d => d[value] | 0));
+
+    // filter out the selected date
+    data = data.filter(d => d.date.getTime() == date);
 
     Promise.all(['https://covidgraphs.com/us-states.json',
                  'https://raw.githubusercontent.com/andreasgal/covidgraphs/master/us-states-map.json']
@@ -215,19 +219,28 @@ window.onload = () => {
         document.getElementById('state').innerHTML =
             states.map(state => '<option value="' + state + '" ' + ((state === 'all') ? 'selected' : '') + '>' +
                        state + '</option>').join('');
-        // extract the value to visualize
+
+        // extract the list of values we can visualize
         const values = Object.keys(data[0]).filter(k => k !== 'date' && k !== 'state');
         document.getElementById('value').innerHTML =
             values.filter(value => value !== 'dateChecked').map(value => '<option value="' + value + '" ' + ((value === 'positive') ? 'selected' : '') + '>' +
                                                                 ((value !== 'death') ? 'Tested ' + value : 'Deaths') + '</option>').join('');
+
+        // extract the dates in the data
+        const dates = unique(data.map(d => d.date.getTime())).sort();
+        const latest = dates[dates.length - 1];
+        document.getElementById('date').innerHTML =
+            dates.map(t => '<option value=' + t + ' ' + ((t === latest) ? 'selected' : '') + '>' + (new Date(t).toLocaleDateString()) + '</option>').join('');
+
         // refresh handler (also used for the initial paint)
         const refresh = () => {
             const div = document.getElementById('graph');
             const ui = Object.fromEntries(Array.prototype.map.call(document.querySelectorAll('select'), element => [element.id, element.value]));
-            document.getElementById('state').hidden = (ui.type === 'map');
+            document.querySelectorAll('#state, label[for="state"]').forEach(e => e.hidden = (ui.type === 'map'));
+            document.querySelectorAll('#date, label[for="date"]').forEach(e => e.hidden = (ui.type !== 'map'));
             switch (ui.type) {
             case 'map':
-                map(div, data, ui.value);
+                map(div, data, ui.value, ui.date);
                 break;
             case 'plot':
                 plot(div,

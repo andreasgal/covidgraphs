@@ -13,7 +13,7 @@ function unique(array) {
     return array.filter((value, index) => array.indexOf(value) === index);
 }
 
-function predict(data, value) {
+function predict(data) {
     const states = unique(data.map(d => d.state));
     return states.map(state => {
         // process each state at a time
@@ -30,14 +30,17 @@ function predict(data, value) {
             previous = result[result.length - 1];
         }
 
-        // fit curve
-        let model = d3.regressionExp()(result.filter(d => d[value] !== null).map(d => [(d.date - result[0].date) / 86400000, d[value]]));
+        // predict for 'positive' and 'death' values
+        ['positive', 'death'].forEach(value => {
+            // fit curve
+            let model = d3.regressionExp()(result.filter(d => d[value] !== null).map(d => [(d.date - result[0].date) / 86400000, d[value]]));
 
-        // predict an additional number of days if requested
-        result.forEach((d, i) => {
-            if (d.predicted) {
-                d[value] = model.predict(i) | 0;
-            }
+            // predict an additional number of days if requested
+            result.forEach((d, i) => {
+                if (d.predicted) {
+                    d[value] = model.predict(i) | 0;
+                }
+            });
         });
 
         return result;
@@ -231,7 +234,8 @@ window.onload = () => {
         load_covid('https://covidtracking.com/api/states/daily'),
         load_covid('https://covidtracking.com/api/us/daily'),
     ]).then(datasets => {
-        const data = datasets.flat();
+        // predict 31 days out and combine prediction with actual data
+        const data = predict(datasets.flat());
 
         // extract list of states from the data, move 'all' to the top,  and set to the default 'all'
         const states = [].concat(['all'], unique(data.map(d => d.state)).sort().filter(name => name !== 'all'));
@@ -264,7 +268,7 @@ window.onload = () => {
                 break;
             case 'plot':
                 plot(div,
-                     predict(data.filter(d => d.state === ui.state), ui.value),
+                     data,
                      ui.state,
                      ui.value,
                      ui.predict);

@@ -48,9 +48,6 @@ function predict(data) {
 }
 
 function map(div, data, value, date) {
-    // don't mutate the data we're passed
-    data = data.slice().filter(d => d.state !== 'all');
-
     // remove anything we might have drawn before
     d3.select(div).selectAll('*').remove();
 
@@ -62,10 +59,12 @@ function map(div, data, value, date) {
           .attr('width', width)
           .attr('height', height);
 
-    const max_value = (value === 'positive') ? 2000 : 100;
-
     // filter out the selected date
     data = data.filter(d => d.date.getTime() == date);
+
+    // we consider 25% of the cases in a single state really bad
+    const max_value = data.filter(d => d.state === 'all')[0][value];
+    const red_value = (max_value / 4) | 0;
 
     Promise.all(['https://covidgraphs.com/us-states.json', 'https://covidgraphs.com/us-states-map.json']
                 .map(url => d3.json(url)))
@@ -89,7 +88,7 @@ function map(div, data, value, date) {
                     let state_data = data.filter(d => d.state === state);
                     let latest_time = Math.max.apply(null, state_data.map(d => d.date.getTime()));
                     let state_latest = state_data.filter(d => d.date.getTime() === latest_time)[0];
-                    let color = Math.max(0, Math.min(255, (255 * state_latest[value] / max_value) | 0));
+                    let color = Math.max(0, Math.min(255, (255 * state_latest[value] / red_value) | 0));
                     return 'rgb(255, ' + (255 - color) + ', 0)';
                 })
                 .attr('stroke', 'black')

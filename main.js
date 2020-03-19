@@ -63,12 +63,19 @@ function plot(data, state, type, predicted_days) {
         .style('font-size', '24px')
         .text('COVID-19 ' + type + ' tests (' + ((state === 'all') ? 'United States' : state) + ')')
 
+    const animate = ((selection, duration) => {
+        selection.attr('opacity', 0)
+            .transition()
+            .delay((d, i) => duration + 250 / data.length * i)
+            .attr('opacity', 1);
+    });
+
     const font = '14px Helvetica Neue';
 
     svg.append('g')
         .style('font', font)
         .attr('transform', `translate(0,${height - margin.bottom})`)
-        .call(d3.axisBottom().scale(x).ticks(data.length));
+                     .call(d3.axisBottom().scale(x).ticks(data.length));
 
     svg.append('g')
         .style('font', font)
@@ -88,6 +95,7 @@ function plot(data, state, type, predicted_days) {
         .attr('x2', d => x(d.date))
         .attr('y2', d => y(d.value))
         .attr('stroke-dasharray', (d, i) => (i < actual_data_length) ? '0,0' : '7,7')
+        .call(animate, 0);
 
     svg.append('g')
         .selectAll('circle')
@@ -96,7 +104,8 @@ function plot(data, state, type, predicted_days) {
         .attr('fill', 'black')
         .attr('cx', d => x(d.date))
         .attr('cy', d => y(d.value))
-        .attr('r', 5);
+        .attr('r', 5)
+        .call(animate, 0);
 
     svg.append('g')
         .selectAll('text.value')
@@ -109,7 +118,8 @@ function plot(data, state, type, predicted_days) {
         .attr('text-anchor', 'end')
         .attr('alignment-baseline', 'after-edge')
         .attr('x', d => x(d.date))
-        .attr('y', d => y(d.value) - height / 100);
+        .attr('y', d => y(d.value) - height / 100)
+        .call(animate, 0);
 
     svg.append('g')
         .selectAll('text.delta')
@@ -124,7 +134,8 @@ function plot(data, state, type, predicted_days) {
         .attr('text-anchor', 'end')
         .attr('alignment-baseline', 'after-edge')
         .attr('x', d => (x(d.date) + x(d.previous.date)) / 2)
-        .attr('y', d => (y(d.value) + y(d.previous.value)) / 2 - height / 100);
+        .attr('y', d => (y(d.value) + y(d.previous.value)) / 2 - height / 100)
+        .call(animate, 0);
 }
 
 function preprocess_covid_data(data) {

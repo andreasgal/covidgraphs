@@ -224,8 +224,6 @@ window.onload = () => {
         const refresh = () => {
             const div = document.getElementById('graph');
             const ui = Object.fromEntries(Array.prototype.map.call(document.querySelectorAll('select'), element => [element.id, element.value]));
-            ui.value = document.getElementById('value').value;
-            ui.predict = document.getElementById('predict').value;
             switch (ui.type) {
             case 'map':
                 map(div, data, ui.value);

@@ -103,13 +103,6 @@ function plot(svg, width, height, data, state, value, predict) {
           .domain(d3.extent([].concat([0], data.map(d => d[value]))))
           .range([height - margin.bottom, margin.top]);
 
-    svg.append('text')
-        .attr('x', width / 2)
-        .attr('y', margin.top / 2)
-        .attr('text-anchor', 'middle')
-        .style('font-size', '24px')
-        .text('COVID-19 ' + value + ' (' + ((state === 'all') ? 'United States' : state) + ')')
-
     const font = '14px Helvetica Neue';
 
     svg.append('g')
@@ -247,6 +240,18 @@ window.onload = () => {
                   .append('svg')
                   .attr('width', width)
                   .attr('height', height);
+
+            // add title
+            let title = 'COVID-19 ' + ui.value;
+            if (ui.type === 'plot') {
+                title += ' (' + ((ui.state === 'all') ? 'United States' : state) + ')';
+            }
+            svg.append('text')
+                .attr('x', width / 2)
+                .attr('y', height / 10)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '24px')
+                .text(title);
 
             switch (ui.type) {
             case 'map':

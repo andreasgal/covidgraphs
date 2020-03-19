@@ -67,8 +67,7 @@ function map(div, data, value, date) {
     // filter out the selected date
     data = data.filter(d => d.date.getTime() == date);
 
-    Promise.all(['https://covidgraphs.com/us-states.json',
-                 'https://raw.githubusercontent.com/andreasgal/covidgraphs/master/us-states-map.json']
+    Promise.all(['https://covidgraphs.com/us-states.json', 'https://covidgraphs.com/us-states-map.json']
                 .map(url => d3.json(url)))
         .then(results => {
             const [state_abbreviations, geo] = results;

@@ -215,34 +215,31 @@ const fetches = Promise.all([
 
 // once the window is loaded we can process the data
 window.onload = () => {
-    const ui_type = document.getElementById('type');
-    const ui_state = document.getElementById('state');
-    const ui_value = document.getElementById('value');
-    const ui_predict = document.getElementById('predict');
     fetches.then(datasets => {
         const [data, albers] = datasets;
         // extract list of states from the data, move 'all' to the top,  and set to the default 'all'
         const states = [].concat(['all'], unique(data.map(d => d.state)).sort().filter(name => name !== 'all'));
-        ui_state.innerHTML =
+        document.getElementById('state').innerHTML =
             states.map(state => '<option value="' + state + '" ' + ((state === 'all') ? 'selected' : '') + '>' +
                        state + '</option>').join('');
         // extract the value to visualize
         const values = Object.keys(data[0]).filter(k => k !== 'date' && k !== 'state');
-        ui_value.innerHTML =
+        document.getElementById('value').innerHTML =
             values.filter(value => value !== 'dateChecked').map(value => '<option value="' + value + '" ' + ((value === 'positive') ? 'selected' : '') + '>' +
                                                                 ((value !== 'death') ? 'Tested ' + value : 'Deaths') + '</option>').join('');
         // refresh handler (also used for the initial paint)
         const refresh = () => {
             const div = document.getElementById('graph');
-            const selected_data = data.filter(d => d.state === ui_state.value);
-            const selected_value = ui_value.value;
-            const combined_data = predict(selected_data.map(d => ({ date: d.date, value: d[selected_value] })), ui_predict.value);
-            switch (ui_type.value) {
+            const ui = Object.fromEntries(Array.prototype.map.call(document.querySelectorAll('select'), element => [element.id, element.value]));
+            ui.value = document.getElementById('value').value;
+            ui.predict = document.getElementById('predict').value;
+            const combined_data = predict(data.filter(d => d.state === ui.state).map(d => ({ date: d.date, value: d[ui.value] })), ui.predict);
+            switch (ui.type) {
             case 'map':
-                map(div, albers, combined_data, selected_value);
+                map(div, albers, combined_data, ui.value);
                 break;
             case 'plot':
-                plot(div, combined_data, ui_state.value, selected_value);
+                plot(div, combined_data, ui.state, ui.value);
                 break;
             }
         };

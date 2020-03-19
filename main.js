@@ -63,7 +63,7 @@ function map(div, data, value, date) {
 
             const projection = d3.geoAlbersUsa()
                   .translate([width/2, height/2])
-                  .scale(width * 0.8);
+                  .scale(width * 0.9);
             const path = d3.geoPath().projection(projection);
 
             const g = svg.append('g');

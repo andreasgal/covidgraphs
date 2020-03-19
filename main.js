@@ -33,7 +33,7 @@ function predict(data, days) {
     return data;
 }
 
-function map(div, albers, data, state, value) {
+function map(div, data, state, value) {
     // remove anything we might have drawn before
     d3.select(div).selectAll('*').remove();
 
@@ -52,12 +52,14 @@ function map(div, albers, data, state, value) {
 	  .translate([width/2, height/2]);
     const path = d3.geoPath().projection(projection);
 
+    /*
     console.log(albers);
     g.selectAll("path")
         .data(topojson.object(albers, albers.objects.states).geometries)
         .enter()
         .append("path")
         .attr("d", path)
+    */
 
     /*
     const path = d3.geo.path().projection(projection);
@@ -204,19 +206,14 @@ function load_covid(url) {
     return load(url).then(data => preprocess_covid_data(data));
 }
 
-// Issue a fetch for the COVID data as soon as the script executes
-const fetches = Promise.all([
+// once the window is loaded we can process the data
+window.onload = () => {
     Promise.all([
         load_covid('https://covidtracking.com/api/states/daily'),
         load_covid('https://covidtracking.com/api/us/daily'),
-    ]).then(datasets => datasets.flat()),
-    load('https://cdn.jsdelivr.net/npm/us-atlas@3/states-albers-10m.json'),
-]);
+    ]).then(datasets => {
+        const data = datasets.flat();
 
-// once the window is loaded we can process the data
-window.onload = () => {
-    fetches.then(datasets => {
-        const [data, albers] = datasets;
         // extract list of states from the data, move 'all' to the top,  and set to the default 'all'
         const states = [].concat(['all'], unique(data.map(d => d.state)).sort().filter(name => name !== 'all'));
         document.getElementById('state').innerHTML =
@@ -236,7 +233,7 @@ window.onload = () => {
             const combined_data = predict(data.filter(d => d.state === ui.state).map(d => ({ date: d.date, value: d[ui.value] })), ui.predict);
             switch (ui.type) {
             case 'map':
-                map(div, albers, combined_data, ui.value);
+                map(div, combined_data, ui.value);
                 break;
             case 'plot':
                 plot(div, combined_data, ui.state, ui.value);

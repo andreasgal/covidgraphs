@@ -247,7 +247,7 @@ window.onload = () => {
             // add title
             let title = 'COVID-19 ' + ui.value;
             if (ui.type === 'plot') {
-                title += ' (' + ((ui.state === 'all') ? 'United States' : state) + ')';
+                title += ' (' + ((ui.state === 'all') ? 'United States' : ui.state) + ')';
             }
             svg.append('text')
                 .attr('x', width / 2)

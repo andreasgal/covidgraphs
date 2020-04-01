@@ -182,10 +182,13 @@ async function load() {
 
         const plot = (svg, width, height, datasets, value, logscale) => {
             // skip over days before the first infection (or the first 10 for logscale)
-            while (datasets[0].length && Math.max.apply(null, datasets.map(dataset => dataset[0].data[value])) < (logscale ? 10 : 1))
-                datasets = datasets.map(dataset => dataset.slice(1));
+            datasets = datasets.map(dataset => dataset.filter(d => d.data[value] >= (logscale ? 10 : 1)));
 
-            if (!datasets[0].length)
+            // remove datasets that are empty
+            datasets = datasets.filter(dataset => dataset.length > 0);
+
+            // if nothing is left to plot, we're done
+            if (!datasets.length)
                 return;
 
             const margin = ({top: height / 10, right: width / 15, bottom: height / 8, left: width / 15});

@@ -179,10 +179,11 @@ async function load() {
         const plot = (svg, width, height, dataset, value, predict) => {
             const actual = dataset.filter(d => !('predicted' in d)).length;
 
-            // return the desired slice of the data
-            if (value !== 'positive' && value !== 'deaths')
-                predict = 0;
+            // limit to the selected number of predicted days
             dataset = dataset.slice(0, actual + (predict * 1));
+
+            // skip over days before the first infection
+            dataset = dataset.filter(d => d.data[value] > 0);
 
             const margin = ({top: height / 10, right: width / 15, bottom: height / 8, left: width / 15});
 

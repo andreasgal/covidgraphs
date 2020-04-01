@@ -180,7 +180,7 @@ async function load() {
             return Array.from(new Set(dataset.map(x => x.data).flat().map(x => x.key[n]).filter(x => !!x)).keys());
         };
 
-        const plot = (svg, width, height, datasets, options) => {
+        const plot = (svg, width, height, datasets, keys, options) => {
             const value = options.value;
             const showrate = options.showrate;
             const logscale = options.logscale;
@@ -215,7 +215,7 @@ async function load() {
                 .attr('x', width / 2)
                 .attr('y', height - margin.bottom / 2)
                 .style('text-anchor', 'middle')
-                .text('Days since start of outbreak');
+                .text('Days since first ' + value);
 
             svg.append('g')
                 .style('font', font)
@@ -248,23 +248,25 @@ async function load() {
                     .attr('cy', d => y(d.data[value]))
                     .attr('r', 5);
 
-                svg.append('g')
-                    .selectAll('text.value')
-                    .data(dataset)
-                    .join('text')
-                    .attr('class', 'value')
-                    .attr('fill', color)
-                    .attr('font-weight', 'bold')
-                    .attr('text-anchor', 'end')
-                    .attr('alignment-baseline', 'after-edge')
-                    .attr('x', (d, i) => x(i))
-                    .attr('y', d => y(d.data[value]) - height / 100)
-                    .text((d, i) => (!i) ? '' : d.data[value]);
+                if (!options.compare) {
+                    svg.append('g')
+                        .selectAll('text.value')
+                        .data(dataset)
+                        .join('text')
+                        .attr('class', 'value')
+                        .attr('fill', color)
+                        .attr('font-weight', 'bold')
+                        .attr('text-anchor', 'end')
+                        .attr('alignment-baseline', 'after-edge')
+                        .attr('x', (d, i) => x(i))
+                        .attr('y', d => y(d.data[value]) - height / 100)
+                        .text((d, i) => (!i) ? '' : d.data[value]);
+                }
 
                 if (label) {
                     svg.append('text')
                         .attr('class', 'value')
-                        .attr('fill', options.color)
+                        .attr('fill', color)
                         .attr('font-weight', 'bold')
                         .attr('text-anchor', 'start')
                         .attr('alignment-baseline', 'after-edge')
@@ -295,7 +297,7 @@ async function load() {
                 return;
             }
 
-            datasets.forEach((dataset, i) => draw(dataset, d3.schemeCategory10[i % 10], ''));
+            datasets.forEach((dataset, i) => draw(dataset, d3.schemeCategory10[i % 10], keys[i].filter(k => k !== 'ALL').reverse().join(', ')));
         }
 
         const select = (dataset, key, predict) => {
@@ -334,7 +336,7 @@ async function load() {
             return dataset;
         };
 
-        const graph = (datasets, options) => {
+        const graph = (datasets, keys, options) => {
             const div = document.getElementById('graph');
 
             // remove anything we might have drawn before
@@ -355,7 +357,7 @@ async function load() {
 		.style('font-size', '24px')
                 .text(options.title);
 
-            plot(svg, width, height, datasets, options);
+            plot(svg, width, height, datasets, keys, options);
         };
 
         const title = (key, value) => {
@@ -389,16 +391,21 @@ async function load() {
             const updated = [].concat(key, [value, predict, showrate, logscale, compare, window.innerWidth, window.innerHeight]).join('|');
             if (current != updated) {
                 current = updated;
-                const datasets = [select(dataset, key, predict)];
+                const keys = [key];
                 if (compare) {
-                    datasets.push(select(dataset, ['Italy', 'ALL', 'ALL'], predict));
+                    keys.push(['Italy', 'ALL', 'ALL']);
+                    keys.push(['Germany', 'ALL', 'ALL']);
+                    keys.push(['Spain', 'ALL', 'ALL']);
+                    keys.push(['France', 'ALL', 'ALL']);
+                    keys.push(['South Korea', 'ALL', 'ALL']);
                 }
-                graph(datasets, {
+                const datasets = keys.map(key => select(dataset, key, predict));
+                graph(datasets, keys, {
                     value: value,
                     showrate: showrate,
                     logscale: logscale,
                     compare: compare,
-                    title: title(key, value),
+                    title: compare ? '' : title(key, value),
                 });
             }
         };

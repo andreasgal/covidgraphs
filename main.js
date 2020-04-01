@@ -191,12 +191,10 @@ async function load() {
             if (!datasets.length)
                 return;
 
-            const days = Math.max.apply(null, datasets.map(dataset => dataset.length));
-
             const margin = ({top: height / 10, right: width / 15, bottom: height / 8, left: width / 15});
 
             const x = d3.scaleLinear()
-                  .domain([0, days])
+                  .domain([0, Math.max.apply(null, datasets.map(dataset => dataset.length))])
                   .range([margin.left, width - margin.right]);
             const y = (logscale ? d3.scaleLog() : d3.scaleLinear())
                   .domain(d3.extent(datasets.flat().map(d => d.data[value])))
@@ -207,7 +205,7 @@ async function load() {
             svg.append('g')
                 .style('font', font)
                 .attr('transform', `translate(0,${height - margin.bottom})`)
-                .call(d3.axisBottom().scale(x).ticks(days).tickFormat(d => (datasets.length === 1 && d === days) ? 'TODAY' : (!(d % 5) ? d : '')));
+                .call(d3.axisBottom().scale(x));
 
             svg.append('text')
                 .attr('x', width / 2)
@@ -220,7 +218,7 @@ async function load() {
                 .attr('transform', `translate(${margin.left}, 0)`)
                 .call(d3.axisLeft().scale(y).ticks(10).tickFormat(d => logscale ? (((Math.log10(d) | 0) === Math.log10(d) || d >= 1000) ? d : '') : d));
 
-            const draw = (dataset) => {
+            const draw = (dataset, markToday) => {
                 svg.append('g')
                     .attr('fill', 'none')
                     .attr('stroke', 'black')
@@ -256,6 +254,17 @@ async function load() {
                     .attr('y', d => y(d.data[value]) - height / 100)
                     .text((d, i) => (!i) ? '' : d.data[value]);
 
+                if (markToday) {
+                    svg.append('text')
+                        .attr('class', 'value')
+                        .attr('font-weight', 'bold')
+                        .attr('text-anchor', 'start')
+                        .attr('alignment-baseline', 'after-edge')
+                        .attr('x', x(dataset.length - 1) + 4)
+                        .attr('y', y(dataset[dataset.length - 1].data[value]) - height / 100)
+                        .text(d => '(today)');
+                }
+
                 svg.append('g')
                     .selectAll('text.delta')
                     .data(dataset)
@@ -271,7 +280,7 @@ async function load() {
                     .text((d, i) => (!i || d.previous.data[value] === d.data[value]) ? '' : (((d.data[value] - d.previous.data[value]) / d.previous.data[value] * 100) | 0) + '%')
             };
 
-            draw(datasets[0]);
+            draw(datasets[0], datasets.length === 1);
         }
 
         const select = (dataset, key, predict) => {

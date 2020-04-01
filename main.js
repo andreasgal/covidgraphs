@@ -266,7 +266,9 @@ async function load() {
         }
 
 
-        const select = (dataset, country, state, county) => {
+        const select = (dataset, key) => {
+            const [country, state, county] = key;
+
             // filter
             dataset = filterBy(dataset, COUNTRY, country);
             dataset = filterBy(dataset, STATE, state);
@@ -300,9 +302,24 @@ async function load() {
             return dataset;
         };
 
-        const graph = (dataset, key, value, predict, logscale) => {
+        const title = (key, value) => {
             const [country, state, county] = key;
 
+            let title = 'COVID-19 ' + value;
+            if (county !== 'ALL') {
+                title += ' (' + county + ')';
+            } else if (state !== 'ALL') {
+                title += ' (' + state + ')';
+            } else if (country !== 'ALL') {
+                title += ' (' + country + ')';
+            } else {
+                title += ' world-wide';
+            }
+
+            return title;
+        };
+
+        const graph = (dataset, key, value, predict, logscale) => {
             const div = document.getElementById('graph');
 
             // remove anything we might have drawn before
@@ -316,26 +333,15 @@ async function load() {
                   .attr('width', width)
                   .attr('height', height);
 
-            // add title
-            let title = 'COVID-19 ' + value;
-            if (county !== 'ALL') {
-                title += ' (' + county + ')';
-            } else if (state !== 'ALL') {
-                title += ' (' + state + ')';
-            } else if (country !== 'ALL') {
-                title += ' (' + country + ')';
-            } else {
-                title += ' world-wide';
-            }
             svg.append('text')
                 .attr('x', width / 2)
 		.attr('y', height / 10)
                 .attr('text-anchor', 'middle')
 		.style('font-size', '24px')
-                .text(title);
+                .text(title(key, value));
 
             // filter dataset
-            dataset = select(dataset, country, state, county);
+            dataset = select(dataset, key);
 
             plot(svg, width, height, dataset, value, predict, logscale);
         };

@@ -222,7 +222,7 @@ async function load() {
                 .attr('transform', `translate(${margin.left}, 0)`)
                 .call(d3.axisLeft().scale(y).ticks(10).tickFormat(d => logscale ? (((Math.log10(d) | 0) === Math.log10(d) || d >= 1000) ? d : '') : d));
 
-            const draw = (dataset, markToday) => {
+            const draw = (dataset, options) => {
                 svg.append('g')
                     .attr('fill', 'none')
                     .attr('stroke', 'black')
@@ -258,7 +258,7 @@ async function load() {
                     .attr('y', d => y(d.data[value]) - height / 100)
                     .text((d, i) => (!i) ? '' : d.data[value]);
 
-                if (markToday) {
+                if (options.markToday) {
                     svg.append('text')
                         .attr('class', 'value')
                         .attr('font-weight', 'bold')
@@ -286,7 +286,9 @@ async function load() {
                 }
             };
 
-            draw(datasets[0], datasets.length === 1);
+            options.markToday = datasets.length === 1;
+
+            draw(datasets[0], options);
         }
 
         const select = (dataset, key, predict) => {

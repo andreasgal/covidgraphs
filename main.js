@@ -241,7 +241,9 @@ async function load() {
                     .selectAll('circle')
                     .data(dataset)
                     .join('circle')
-                    .attr('fill', 'black')
+                    .attr('fill', 'white')
+                    .attr('stroke', 'black')
+                    .attr('stroke-width', 3)
                     .attr('cx', (d, i) => x(i))
                     .attr('cy', d => y(d.data[value]))
                     .attr('r', 5);

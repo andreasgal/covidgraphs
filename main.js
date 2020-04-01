@@ -294,13 +294,8 @@ async function load() {
             plot(svg, width, height, dataset, value, predict, logscale);
         };
 
-        const select = (country, state, county) => {
-            state = state || 'ALL';
-            county = county || 'ALL';
-        };
-
-        const update = (key, dataset, value, predict, logscale) => {
-            let [country, state, county] = key;
+        const select = (dataset, country, state, county) => {
+            // filter
             dataset = filterBy(dataset, COUNTRY, country);
             dataset = filterBy(dataset, STATE, state);
             dataset = filterBy(dataset, COUNTY, county);
@@ -329,6 +324,14 @@ async function load() {
 
             // Predict into the future
             dataset = model(dataset);
+
+            return dataset;
+        };
+
+        const update = (key, dataset, value, predict, logscale) => {
+            const [country, state, county] = key;
+
+            dataset = select(dataset, country, state, county);
 
             graph(dataset, value, predict, logscale);
         };

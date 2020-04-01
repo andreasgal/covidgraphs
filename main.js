@@ -328,26 +328,19 @@ async function load() {
             return dataset;
         };
 
-        const update = (key, dataset, value, predict, logscale) => {
-            const [country, state, county] = key;
-
-            dataset = select(dataset, country, state, county);
-
-            graph(dataset, value, predict, logscale);
-        };
-
         let current = '';
         const maybeUpdate = () => {
-            const key = [$('#country').value, $('#state').value, $('#county').value];
-            const updated = [].concat(key,
-                                      [$('#value').value,
-                                       $('#predict').value,
-                                       $('#logscale').checked,
-                                       window.innerWidth,
-                                       window.innerHeight]).join('|');
+            const country = $('#country').value;
+            const state = $('#state').value;
+            const county = $('#county').value;
+            const key = [country, state, county];
+            const value = $('#value').value;
+            const predict = $('#predict').value;
+            const logscale = $('#logscale').checked;
+            const updated = [].concat(key, [value, predict, logscale, window.innerWidth, window.innerHeight]).join('|');
             if (current != updated) {
                 current = updated;
-                update(key, dataset, $('#value').value, $('#predict').value, $('#logscale').checked);
+                graph(select(dataset, country, state, county), value, predict, logscale);
             }
         };
 

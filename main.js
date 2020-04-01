@@ -190,18 +190,16 @@ async function load() {
             while (datasets[0].length && Math.max.apply(null, datasets.map(dataset => dataset[0].data[value])) < (logscale ? 10 : 1))
                 datasets = datasets.map(dataset => dataset.slice(1));
 
-            let dataset = datasets[0];
-
-            if (!dataset.length)
+            if (!datasets[0].length)
                 return;
 
             const margin = ({top: height / 10, right: width / 15, bottom: height / 8, left: width / 15});
 
             const x = d3.scaleTime()
-                  .domain(d3.extent(dataset.map(d => d.date)))
+                  .domain(d3.extent(datasets.flat().map(d => d.date)))
                   .range([margin.left, width - margin.right]);
             const y = (logscale ? d3.scaleLog() : d3.scaleLinear())
-                  .domain(d3.extent(dataset.map(d => d.data[value])))
+                  .domain(d3.extent(datasets.flat().map(d => d.data[value])))
                   .range([height - margin.bottom, margin.top]);
 
             const font = '14px Helvetica Neue';
@@ -216,56 +214,60 @@ async function load() {
                 .attr('transform', `translate(${margin.left}, 0)`)
                 .call(d3.axisLeft().scale(y).ticks(10, ',.2r'));
 
-            svg.append('g')
-                .attr('fill', 'none')
-                .attr('stroke', 'black')
-                .attr('stroke-width', 5)
-                .attr('stroke-linecap', 'round')
-                .selectAll('line')
-                .data(dataset)
-                .join('line')
-                .attr('x1', (d, i) => x(dataset[Math.max(i - 1, 0)].date))
-                .attr('y1', (d, i) => y(dataset[Math.max(i - 1, 0)].data[value]))
-                .attr('x2', d => x(d.date))
-                .attr('y2', d => y(d.data[value]))
-                .attr('stroke-dasharray', d => d.predicted ? '7,7' : '0,0');
+            const draw = (dataset) => {
+                svg.append('g')
+                    .attr('fill', 'none')
+                    .attr('stroke', 'black')
+                    .attr('stroke-width', 5)
+                    .attr('stroke-linecap', 'round')
+                    .selectAll('line')
+                    .data(dataset)
+                    .join('line')
+                    .attr('x1', (d, i) => x(dataset[Math.max(i - 1, 0)].date))
+                    .attr('y1', (d, i) => y(dataset[Math.max(i - 1, 0)].data[value]))
+                    .attr('x2', d => x(d.date))
+                    .attr('y2', d => y(d.data[value]))
+                    .attr('stroke-dasharray', d => d.predicted ? '7,7' : '0,0');
 
-            svg.append('g')
-                .selectAll('circle')
-                .data(dataset)
-                .join('circle')
-                .attr('fill', 'black')
-                .attr('cx', d => x(d.date))
-                .attr('cy', d => y(d.data[value]))
-                .attr('r', 5);
+                svg.append('g')
+                    .selectAll('circle')
+                    .data(dataset)
+                    .join('circle')
+                    .attr('fill', 'black')
+                    .attr('cx', d => x(d.date))
+                    .attr('cy', d => y(d.data[value]))
+                    .attr('r', 5);
 
-            svg.append('g')
-                .selectAll('text.value')
-                .data(dataset)
-                .join('text')
-                .attr('class', 'value')
-                .filter((d, i) => i > 0)
-                .text(d => d.data[value])
-                .attr('font-weight', 'bold')
-                .attr('text-anchor', 'end')
-                .attr('alignment-baseline', 'after-edge')
-                .attr('x', d => x(d.date))
-                .attr('y', d => y(d.data[value]) - height / 100);
+                svg.append('g')
+                    .selectAll('text.value')
+                    .data(dataset)
+                    .join('text')
+                    .attr('class', 'value')
+                    .filter((d, i) => i > 0)
+                    .text(d => d.data[value])
+                    .attr('font-weight', 'bold')
+                    .attr('text-anchor', 'end')
+                    .attr('alignment-baseline', 'after-edge')
+                    .attr('x', d => x(d.date))
+                    .attr('y', d => y(d.data[value]) - height / 100);
 
-            svg.append('g')
-                .selectAll('text.delta')
-                .data(dataset)
-                .join('text')
-                .attr('class', 'delta')
-                .filter(d => d.previous.data[value] && d.previous.data[value] !== d.data[value])
-                .text((d, i) => (((d.data[value] - d.previous.data[value]) / d.previous.data[value] * 100) | 0) + '%')
-                .attr('font-weight', 'lighter')
-                .attr('font-size', '14px')
-                .attr('fill', d => (d.data[value] > d.previous.data[value]) ? 'red' : 'green')
-                .attr('text-anchor', 'end')
-                .attr('alignment-baseline', 'after-edge')
-                .attr('x', d => (x(d.date) + x(d.previous.date)) / 2)
-                .attr('y', d => (y(d.data[value]) + y(d.previous.data[value])) / 2 - height / 100);
+                svg.append('g')
+                    .selectAll('text.delta')
+                    .data(dataset)
+                    .join('text')
+                    .attr('class', 'delta')
+                    .filter(d => d.previous.data[value] && d.previous.data[value] !== d.data[value])
+                    .text((d, i) => (((d.data[value] - d.previous.data[value]) / d.previous.data[value] * 100) | 0) + '%')
+                    .attr('font-weight', 'lighter')
+                    .attr('font-size', '14px')
+                    .attr('fill', d => (d.data[value] > d.previous.data[value]) ? 'red' : 'green')
+                    .attr('text-anchor', 'end')
+                    .attr('alignment-baseline', 'after-edge')
+                    .attr('x', d => (x(d.date) + x(d.previous.date)) / 2)
+                    .attr('y', d => (y(d.data[value]) + y(d.previous.data[value])) / 2 - height / 100);
+            };
+
+            draw(datasets[0]);
         }
 
 

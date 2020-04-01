@@ -150,11 +150,13 @@ async function load() {
         };
 
         const model = (dataset) => {
-	    let positive = d3.regressionExp()(dataset.map((d, i) => [i, d.data.positive]));
-            let deaths = d3.regressionExp()(dataset.map((d, i) => [i, d.data.deaths]));
+            const filter = (dataset, value) => dataset.map((d, i) => [i, d.data[value]]).filter((d, i) => !!d[1]);
+            let positive = d3.regressionExp()(filter(dataset, 'positive'));
+            let deaths = d3.regressionExp()(filter(dataset, 'deaths'));
+            console.log(filter(dataset, 'deaths'));
             for (let i = 0; i < 42; ++i) {
-                let x = dataset.length - 1;
-                let previous = dataset[x];
+                let previous = dataset[dataset.length - 1];
+                let x = (previous.date.getTime() - dataset[0].date.getTime()) / (24 * 60 * 60 * 1000);
                 dataset.push({
                     date: nextDay(previous.date),
                     data: {

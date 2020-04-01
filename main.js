@@ -265,34 +265,6 @@ async function load() {
                 .attr('y', d => (y(d.data[value]) + y(d.previous.data[value])) / 2 - height / 100);
         }
 
-        const graph = (dataset, value, predict, logscale) => {
-            const div = document.getElementById('graph');
-
-            // remove anything we might have drawn before
-            d3.select(div).selectAll('*').remove();
-
-            // add an SVG element covering the full size of the div
-            const width = div.clientWidth;
-            const height = div.clientHeight;
-            const svg = d3.select(div)
-                  .append('svg')
-                  .attr('width', width)
-                  .attr('height', height);
-
-            // add title
-            let title = 'COVID-19 ' + $('#value').value;
-            if (ui.type === 'plot') {
-                title += ' (' + ((ui.state === 'all') ? 'United States' : ui.state) + ')';
-            }
-            svg.append('text')
-                .attr('x', width / 2)
-		.attr('y', height / 10)
-                .attr('text-anchor', 'middle')
-		.style('font-size', '24px')
-                .text(title);
-
-            plot(svg, width, height, dataset, value, predict, logscale);
-        };
 
         const select = (dataset, country, state, county) => {
             // filter
@@ -328,6 +300,40 @@ async function load() {
             return dataset;
         };
 
+        const graph = (dataset, key, value, predict, logscale) => {
+            const [country, state, county] = key;
+
+            const div = document.getElementById('graph');
+
+            // remove anything we might have drawn before
+            d3.select(div).selectAll('*').remove();
+
+            // add an SVG element covering the full size of the div
+            const width = div.clientWidth;
+            const height = div.clientHeight;
+            const svg = d3.select(div)
+                  .append('svg')
+                  .attr('width', width)
+                  .attr('height', height);
+
+            // add title
+            let title = 'COVID-19 ' + $('#value').value;
+            if (ui.type === 'plot') {
+                title += ' (' + ((ui.state === 'all') ? 'United States' : ui.state) + ')';
+            }
+            svg.append('text')
+                .attr('x', width / 2)
+		.attr('y', height / 10)
+                .attr('text-anchor', 'middle')
+		.style('font-size', '24px')
+                .text(title);
+
+            // filter dataset
+            dataset = select(dataset, country, state, county);
+
+            plot(svg, width, height, dataset, value, predict, logscale);
+        };
+
         let current = '';
         const maybeUpdate = () => {
             const country = $('#country').value;
@@ -340,7 +346,7 @@ async function load() {
             const updated = [].concat(key, [value, predict, logscale, window.innerWidth, window.innerHeight]).join('|');
             if (current != updated) {
                 current = updated;
-                graph(select(dataset, country, state, county), value, predict, logscale);
+                graph(dataset, key, value, predict, logscale);
             }
         };
 

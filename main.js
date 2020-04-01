@@ -222,10 +222,10 @@ async function load() {
                 .attr('transform', `translate(${margin.left}, 0)`)
                 .call(d3.axisLeft().scale(y).ticks(10).tickFormat(d => logscale ? (((Math.log10(d) | 0) === Math.log10(d) || d >= 1000) ? d : '') : d));
 
-            const draw = (dataset, options) => {
+            const draw = (dataset, color, label) => {
                 svg.append('g')
                     .attr('fill', 'none')
-                    .attr('stroke', 'black')
+                    .attr('stroke', color)
                     .attr('stroke-width', 5)
                     .attr('stroke-linecap', 'round')
                     .selectAll('line')
@@ -242,7 +242,7 @@ async function load() {
                     .data(dataset)
                     .join('circle')
                     .attr('fill', 'white')
-                    .attr('stroke', 'black')
+                    .attr('stroke', color)
                     .attr('stroke-width', 3)
                     .attr('cx', (d, i) => x(i))
                     .attr('cy', d => y(d.data[value]))
@@ -253,6 +253,7 @@ async function load() {
                     .data(dataset)
                     .join('text')
                     .attr('class', 'value')
+                    .attr('fill', color)
                     .attr('font-weight', 'bold')
                     .attr('text-anchor', 'end')
                     .attr('alignment-baseline', 'after-edge')
@@ -260,15 +261,16 @@ async function load() {
                     .attr('y', d => y(d.data[value]) - height / 100)
                     .text((d, i) => (!i) ? '' : d.data[value]);
 
-                if (options.markToday) {
+                if (label) {
                     svg.append('text')
                         .attr('class', 'value')
+                        .attr('fill', options.color)
                         .attr('font-weight', 'bold')
                         .attr('text-anchor', 'start')
                         .attr('alignment-baseline', 'after-edge')
                         .attr('x', x(dataset.length - 1) + 4)
                         .attr('y', y(dataset[dataset.length - 1].data[value]) - height / 100)
-                        .text(d => '(today)');
+                        .text(d => label);
                 }
 
                 if (options.showrate) {
@@ -288,9 +290,12 @@ async function load() {
                 }
             };
 
-            options.markToday = datasets.length === 1;
+            if (datasets.length === 1) {
+                draw(datasets[0], 'black', '(today)');
+                return;
+            }
 
-            draw(datasets[0], options);
+            datasets.forEach((dataset, i) => draw(dataset, d3.schemeCategory10[i % 10], ''));
         }
 
         const select = (dataset, key, predict) => {
@@ -352,7 +357,6 @@ async function load() {
 
             plot(svg, width, height, datasets, options);
         };
-
 
         const title = (key, value) => {
             const [country, state, county] = key;

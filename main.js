@@ -153,7 +153,6 @@ async function load() {
             const filter = (dataset, value) => dataset.map((d, i) => [i, d.data[value]]).filter((d, i) => !!d[1]);
             let positive = d3.regressionExp()(filter(dataset, 'positive'));
             let deaths = d3.regressionExp()(filter(dataset, 'deaths'));
-            console.log(filter(dataset, 'deaths'));
             for (let i = 0; i < 42; ++i) {
                 let previous = dataset[dataset.length - 1];
                 let x = (previous.date.getTime() - dataset[0].date.getTime()) / (24 * 60 * 60 * 1000);
@@ -267,6 +266,18 @@ async function load() {
                   .append('svg')
                   .attr('width', width)
                   .attr('height', height);
+
+            // add title
+            let title = 'COVID-19 ' + $('#value').value;
+            if (ui.type === 'plot') {
+                title += ' (' + ((ui.state === 'all') ? 'United States' : ui.state) + ')';
+            }
+            svg.append('text')
+                .attr('x', width / 2)
+		.attr('y', height / 10)
+                .attr('text-anchor', 'middle')
+		.style('font-size', '24px')
+                .text(title);
 
             plot(svg, width, height, dataset, value, predict);
         };

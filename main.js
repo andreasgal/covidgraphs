@@ -46,6 +46,9 @@ async function load() {
         if (country === 'UK') {
             country = 'United Kingdom';
         }
+        if (country === 'Mainland China') {
+            country = 'China';
+        }
         if (country === 'occupied Palestinian territory') {
             country = 'Palestine';
         }
@@ -176,10 +179,6 @@ async function load() {
             return dataset;
         }
 
-        const listKeys = (dataset, n) => {
-            return Array.from(new Set(dataset.map(x => x.data).flat().map(x => x.key[n]).filter(x => !!x)).keys());
-        };
-
         const plot = (svg, width, height, datasets, keys, options) => {
             const value = options.value;
             const showrate = options.showrate;
@@ -300,16 +299,18 @@ async function load() {
             datasets.forEach((dataset, i) => draw(dataset, d3.schemeCategory10[i % 10], keys[i].filter(k => k !== 'ALL').reverse().join(', ')));
         }
 
-        const select = (dataset, key, predict) => {
+        const filter = (dataset, key) => {
             const [country, state, county] = key;
 
-            // filter
-            dataset = filterBy(dataset, COUNTRY, country);
-            dataset = filterBy(dataset, STATE, state);
-            dataset = filterBy(dataset, COUNTY, county);
-
-            // don't mutate original dataset
-            dataset = dataset.slice();
+            if (country === 'ALL' && state === 'ALL' && county === 'ALL') {
+                // make sure we never mutate the original dataset
+                dataset = dataset.slice();
+            } else {
+                // filter
+                dataset = filterBy(dataset, COUNTRY, country);
+                dataset = filterBy(dataset, STATE, state);
+                dataset = filterBy(dataset, COUNTY, county);
+            }
 
             // remove empty records at the beginning
             while (dataset.length && !dataset[0].data.length)
@@ -318,6 +319,13 @@ async function load() {
             // remove empty records at the end
             while (dataset.length && !dataset[dataset.length - 1].data.length)
                 dataset.pop();
+
+            return dataset;
+        };
+
+        const select = (dataset, key, predict) => {
+            // filter
+            dataset = filter(dataset, key);
 
             // Group datasets and eliminate geographic labels
             dataset = group(dataset);
@@ -334,6 +342,13 @@ async function load() {
             dataset = model(dataset, predict);
 
             return dataset;
+        };
+
+        const list = (dataset, key, n) => {
+            // filter
+            dataset = filter(dataset, key);
+
+            return Array.from(new Set(dataset.map(x => x.data).flat().map(x => x.key[n]).filter(x => !!x)).keys());
         };
 
         const graph = (datasets, keys, options) => {
@@ -377,6 +392,29 @@ async function load() {
             return title;
         };
 
+        const peers = (dataset, key, value) => {
+            let [country, state, county] = key;
+            let axis = COUNTY;
+            if (county === 'ALL') {
+                axis = STATE;
+                if (state === 'ALL') {
+                    axis = COUNTRY;
+                }
+            }
+            const axisKey = (key, axis, label) => {
+                key = key.slice();
+                key[axis] = label;
+                return key;
+            };
+            let ref = list(dataset, axisKey(key, axis, 'ALL'), axis);
+            let max = ref
+                .map(label => axisKey(key, axis, label))
+                .map(key => [key, select(dataset, key)])
+                .map(x => [x[0], x[1][x[1].length - 1].data[value] ])
+                .sort((a, b) => b[1] - a[1]);
+            return max.slice(0, 7).map(x => x[0]);
+        };
+
         let current = '';
         const maybeUpdate = () => {
             const country = $('#country').value;
@@ -391,13 +429,10 @@ async function load() {
             const updated = [].concat(key, [value, predict, showrate, logscale, compare, window.innerWidth, window.innerHeight]).join('|');
             if (current != updated) {
                 current = updated;
-                const keys = [key];
+                let keys = [key];
                 if (compare) {
-                    keys.push(['Italy', 'ALL', 'ALL']);
-                    keys.push(['Germany', 'ALL', 'ALL']);
-                    keys.push(['Spain', 'ALL', 'ALL']);
-                    keys.push(['France', 'ALL', 'ALL']);
-                    keys.push(['South Korea', 'ALL', 'ALL']);
+                    // add comparable countries/states/counties
+                    keys = keys.concat(peers(dataset, key, value));
                 }
                 const datasets = keys.map(key => select(dataset, key, predict));
                 graph(datasets, keys, {
@@ -415,7 +450,7 @@ async function load() {
         });
 
         $('#country').addEventListener('change', (event) => {
-            setOptions($('#state'), listKeys(filterBy(dataset, COUNTRY, $('#country').value), STATE), 'ALL');
+            setOptions($('#state'), list(dataset, [$('#country').value, 'ALL', 'ALL'], STATE), 'ALL');
             if ($('#country').value === 'ALL') {
                 $('#state').value = 'ALL';
                 $('#county').value = 'ALL';
@@ -424,7 +459,7 @@ async function load() {
         });
 
         $('#state').addEventListener('change', (event) => {
-            setOptions($('#county'), listKeys(filterBy(filterBy(dataset, COUNTRY, $('#country').value), STATE, event.target.value), COUNTY), 'ALL');
+            setOptions($('#county'), list(dataset, [$('#country').value, $('#state').value, 'ALL'], COUNTY), 'ALL');
             if ($('#state').value === 'ALL') {
                 $('#county').value = 'ALL';
             }
@@ -435,7 +470,7 @@ async function load() {
 
         window.addEventListener('resize', maybeUpdate);
 
-        setOptions($('#country'), listKeys(dataset, COUNTRY), 'US');
+        setOptions($('#country'), list(dataset, ['ALL', 'ALL', 'ALL'], COUNTRY), 'US');
     });
 };
 

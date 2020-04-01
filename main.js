@@ -181,8 +181,8 @@ async function load() {
         };
 
         const plot = (svg, width, height, datasets, value, logscale) => {
-            // skip over days before the first infection (or the first 10 for logscale)
-            datasets = datasets.map(dataset => dataset.filter(d => d.data[value] >= (logscale ? 10 : 1)));
+            // skip over days before the first infection
+            datasets = datasets.map(dataset => dataset.filter(d => d.data[value] >= 1));
 
             // remove datasets that are empty
             datasets = datasets.filter(dataset => dataset.length > 0);
@@ -191,10 +191,12 @@ async function load() {
             if (!datasets.length)
                 return;
 
+            const days = Math.max.apply(null, datasets.map(dataset => dataset.length));
+
             const margin = ({top: height / 10, right: width / 15, bottom: height / 8, left: width / 15});
 
-            const x = d3.scaleTime()
-                  .domain(d3.extent(datasets.flat().map(d => d.date)))
+            const x = d3.scaleLinear()
+                  .domain([0, days])
                   .range([margin.left, width - margin.right]);
             const y = (logscale ? d3.scaleLog() : d3.scaleLinear())
                   .domain(d3.extent(datasets.flat().map(d => d.data[value])))
@@ -205,12 +207,18 @@ async function load() {
             svg.append('g')
                 .style('font', font)
                 .attr('transform', `translate(0,${height - margin.bottom})`)
-                .call(d3.axisBottom().scale(x));
+                .call(d3.axisBottom().scale(x).ticks(days).tickFormat(d => (datasets.length === 1 && d === days) ? 'TODAY' : (!(d % 5) ? d : '')));
+
+            svg.append('text')
+                .attr('x', width / 2)
+                .attr('y', height - margin.bottom / 2)
+                .style('text-anchor', 'middle')
+                .text('Days since start of outbreak');
 
             svg.append('g')
                 .style('font', font)
                 .attr('transform', `translate(${margin.left}, 0)`)
-                .call(d3.axisLeft().scale(y).ticks(10, ',.2r'));
+                .call(d3.axisLeft().scale(y).ticks(10).tickFormat(d => logscale ? (((Math.log10(d) | 0) === Math.log10(d) || d >= 1000) ? d : '') : d));
 
             const draw = (dataset) => {
                 svg.append('g')
@@ -221,9 +229,9 @@ async function load() {
                     .selectAll('line')
                     .data(dataset)
                     .join('line')
-                    .attr('x1', (d, i) => x(dataset[Math.max(i - 1, 0)].date))
+                    .attr('x1', (d, i) => x(Math.max(i - 1, 0)))
                     .attr('y1', (d, i) => y(dataset[Math.max(i - 1, 0)].data[value]))
-                    .attr('x2', d => x(d.date))
+                    .attr('x2', (d, i) => x(i))
                     .attr('y2', d => y(d.data[value]))
                     .attr('stroke-dasharray', d => d.predicted ? '7,7' : '0,0');
 
@@ -232,7 +240,7 @@ async function load() {
                     .data(dataset)
                     .join('circle')
                     .attr('fill', 'black')
-                    .attr('cx', d => x(d.date))
+                    .attr('cx', (d, i) => x(i))
                     .attr('cy', d => y(d.data[value]))
                     .attr('r', 5);
 
@@ -241,28 +249,26 @@ async function load() {
                     .data(dataset)
                     .join('text')
                     .attr('class', 'value')
-                    .filter((d, i) => i > 0)
-                    .text(d => d.data[value])
                     .attr('font-weight', 'bold')
                     .attr('text-anchor', 'end')
                     .attr('alignment-baseline', 'after-edge')
-                    .attr('x', d => x(d.date))
-                    .attr('y', d => y(d.data[value]) - height / 100);
+                    .attr('x', (d, i) => x(i))
+                    .attr('y', d => y(d.data[value]) - height / 100)
+                    .text((d, i) => (!i) ? '' : d.data[value]);
 
                 svg.append('g')
                     .selectAll('text.delta')
                     .data(dataset)
                     .join('text')
                     .attr('class', 'delta')
-                    .filter(d => d.previous.data[value] && d.previous.data[value] !== d.data[value])
-                    .text((d, i) => (((d.data[value] - d.previous.data[value]) / d.previous.data[value] * 100) | 0) + '%')
                     .attr('font-weight', 'lighter')
                     .attr('font-size', '14px')
-                    .attr('fill', d => (d.data[value] > d.previous.data[value]) ? 'red' : 'green')
+                    .attr('fill', 'red')
                     .attr('text-anchor', 'end')
                     .attr('alignment-baseline', 'after-edge')
-                    .attr('x', d => (x(d.date) + x(d.previous.date)) / 2)
-                    .attr('y', d => (y(d.data[value]) + y(d.previous.data[value])) / 2 - height / 100);
+                    .attr('x', (d, i) => (x(i) + x(i - 1)) / 2)
+                    .attr('y', d => (y(d.data[value]) + y(d.previous.data[value])) / 2 - height / 100)
+                    .text((d, i) => (!i || d.previous.data[value] === d.data[value]) ? '' : (((d.data[value] - d.previous.data[value]) / d.previous.data[value] * 100) | 0) + '%')
             };
 
             draw(datasets[0]);

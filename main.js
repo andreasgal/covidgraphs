@@ -1,6 +1,7 @@
 'use strict';
 
 const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => document.querySelectorAll(selector);
 
 const assert = (cond, msg) => {
     if (!cond) {
@@ -176,22 +177,25 @@ async function load() {
             return Array.from(new Set(dataset.map(x => x.data).flat().map(x => x.key[n]).filter(x => !!x)).keys());
         };
 
-        const plot = (svg, width, height, dataset, value, predict) => {
+        const plot = (svg, width, height, dataset, value, predict, logscale) => {
             const actual = dataset.filter(d => !('predicted' in d)).length;
 
             // limit to the selected number of predicted days
             dataset = dataset.slice(0, actual + (predict * 1));
 
-            // skip over days before the first infection
-            dataset = dataset.filter(d => d.data[value] > 0);
+            // skip over days before the first infection (or the first 10 for logscale)
+            dataset = dataset.filter(d => d.data[value] > (logscale ? 10 : 0));
+
+            if (!dataset.length)
+                return;
 
             const margin = ({top: height / 10, right: width / 15, bottom: height / 8, left: width / 15});
 
             const x = d3.scaleTime()
                   .domain(d3.extent(dataset.map(d => d.date)))
                   .range([margin.left, width - margin.right]);
-            const y = d3.scaleLinear()
-                  .domain(d3.extent([].concat([0], dataset.map(d => d.data[value]))))
+            const y = (logscale ? d3.scaleLog() : d3.scaleLinear())
+                  .domain(d3.extent(dataset.map(d => d.data[value])))
                   .range([height - margin.bottom, margin.top]);
 
             const font = '14px Helvetica Neue';
@@ -204,7 +208,7 @@ async function load() {
             svg.append('g')
                 .style('font', font)
                 .attr('transform', `translate(${margin.left}, 0)`)
-                .call(d3.axisLeft().scale(y));
+                .call(d3.axisLeft().scale(y).ticks(10, ',.2r'));
 
             svg.append('g')
                 .attr('fill', 'none')
@@ -258,7 +262,7 @@ async function load() {
                 .attr('y', d => (y(d.data[value]) + y(d.previous.data[value])) / 2 - height / 100);
         }
 
-        const graph = (dataset, value, predict) => {
+        const graph = (dataset, value, predict, logscale) => {
             const div = document.getElementById('graph');
 
             // remove anything we might have drawn before
@@ -284,10 +288,10 @@ async function load() {
 		.style('font-size', '24px')
                 .text(title);
 
-            plot(svg, width, height, dataset, value, predict);
+            plot(svg, width, height, dataset, value, predict, logscale);
         };
 
-        const update = (key, dataset, value, predict) => {
+        const update = (key, dataset, value, predict, logscale) => {
             let [country, state, county] = key;
 
             if (country !== 'ALL') {
@@ -327,16 +331,21 @@ async function load() {
             // Predict into the future
             dataset = model(dataset);
 
-            graph(dataset, value, predict);
+            graph(dataset, value, predict, logscale);
         };
 
         let current = '';
         const maybeUpdate = () => {
             const key = [$('#country').value, $('#state').value, $('#county').value];
-            const updated = [].concat(key, [$('#value').value, $('#predict').value]).join('|');
+            const updated = [].concat(key,
+                                      [$('#value').value,
+                                       $('#predict').value,
+                                       $('#logscale').checked,
+                                       window.innerWidth,
+                                       window.innerHeight]).join('|');
             if (current != updated) {
                 current = updated;
-                update(key, dataset, $('#value').value, $('#predict').value);
+                update(key, dataset, $('#value').value, $('#predict').value, $('#logscale').checked);
             }
         };
 
@@ -361,13 +370,9 @@ async function load() {
             maybeUpdate();
         });
 
-        $('#county').addEventListener('change', maybeUpdate);
-        $('#value').addEventListener('change', maybeUpdate);
+        $$('#county,#value,#logscale').forEach(e => e.addEventListener('change', maybeUpdate));
 
-        window.addEventListener('resize', () => {
-            current = '';
-            maybeUpdate();
-        });
+        window.addEventListener('resize', maybeUpdate);
 
         setOptions($('#country'), listKeys(dataset, COUNTRY), 'US');
     });

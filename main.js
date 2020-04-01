@@ -317,9 +317,15 @@ async function load() {
                   .attr('height', height);
 
             // add title
-            let title = 'COVID-19 ' + $('#value').value;
-            if (ui.type === 'plot') {
-                title += ' (' + ((ui.state === 'all') ? 'United States' : ui.state) + ')';
+            let title = 'COVID-19 ' + value;
+            if (county !== 'ALL') {
+                title += ' (' + county + ')';
+            } else if (state !== 'ALL') {
+                title += ' (' + state + ')';
+            } else if (country !== 'ALL') {
+                title += ' (' + country + ')';
+            } else {
+                title += ' world-wide';
             }
             svg.append('text')
                 .attr('x', width / 2)

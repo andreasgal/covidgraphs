@@ -180,7 +180,11 @@ async function load() {
             return Array.from(new Set(dataset.map(x => x.data).flat().map(x => x.key[n]).filter(x => !!x)).keys());
         };
 
-        const plot = (svg, width, height, datasets, value, logscale) => {
+        const plot = (svg, width, height, datasets, options) => {
+            const value = options.value;
+            const showrate = options.showrate;
+            const logscale = options.logscale;
+
             // skip over days before the first infection
             datasets = datasets.map(dataset => dataset.filter(d => d.data[value] >= 1));
 
@@ -265,19 +269,21 @@ async function load() {
                         .text(d => '(today)');
                 }
 
-                svg.append('g')
-                    .selectAll('text.delta')
-                    .data(dataset)
-                    .join('text')
-                    .attr('class', 'delta')
-                    .attr('font-weight', 'lighter')
-                    .attr('font-size', '14px')
-                    .attr('fill', 'red')
-                    .attr('text-anchor', 'end')
-                    .attr('alignment-baseline', 'after-edge')
-                    .attr('x', (d, i) => (x(i) + x(i - 1)) / 2)
-                    .attr('y', d => (y(d.data[value]) + y(d.previous.data[value])) / 2 - height / 100)
-                    .text((d, i) => (!i || d.previous.data[value] === d.data[value]) ? '' : (((d.data[value] - d.previous.data[value]) / d.previous.data[value] * 100) | 0) + '%')
+                if (options.showrate) {
+                    svg.append('g')
+                        .selectAll('text.delta')
+                        .data(dataset)
+                        .join('text')
+                        .attr('class', 'delta')
+                        .attr('font-weight', 'lighter')
+                        .attr('font-size', '14px')
+                        .attr('fill', 'red')
+                        .attr('text-anchor', 'end')
+                        .attr('alignment-baseline', 'after-edge')
+                        .attr('x', (d, i) => (x(i) + x(i - 1)) / 2)
+                        .attr('y', d => (y(d.data[value]) + y(d.previous.data[value])) / 2 - height / 100)
+                        .text((d, i) => (!i || d.previous.data[value] === d.data[value]) ? '' : (((d.data[value] - d.previous.data[value]) / d.previous.data[value] * 100) | 0) + '%')
+                }
             };
 
             draw(datasets[0], datasets.length === 1);
@@ -319,7 +325,7 @@ async function load() {
             return dataset;
         };
 
-        const graph = (datasets, value, logscale, title) => {
+        const graph = (datasets, options) => {
             const div = document.getElementById('graph');
 
             // remove anything we might have drawn before
@@ -338,9 +344,9 @@ async function load() {
 		.attr('y', height / 10)
                 .attr('text-anchor', 'middle')
 		.style('font-size', '24px')
-                .text(title);
+                .text(options.title);
 
-            plot(svg, width, height, datasets, value, logscale);
+            plot(svg, width, height, datasets, options);
         };
 
 
@@ -369,11 +375,17 @@ async function load() {
             const key = [country, state, county];
             const value = $('#value').value;
             const predict = $('#predict').value;
+            const showrate = $('#showrate').checked;
             const logscale = $('#logscale').checked;
-            const updated = [].concat(key, [value, predict, logscale, window.innerWidth, window.innerHeight]).join('|');
+            const updated = [].concat(key, [value, predict, showrate, logscale, window.innerWidth, window.innerHeight]).join('|');
             if (current != updated) {
                 current = updated;
-                graph([select(dataset, key, predict)], value, logscale, title(key, value));
+                graph([select(dataset, key, predict)], {
+                    value: value,
+                    showrate: showrate,
+                    logscale: logscale,
+                    title: title(key, value),
+                });
             }
         };
 
@@ -398,7 +410,7 @@ async function load() {
             maybeUpdate();
         });
 
-        $$('#county,#value,#logscale').forEach(e => e.addEventListener('change', maybeUpdate));
+        $$('#county,#value,#showrate,#logscale').forEach(e => e.addEventListener('change', maybeUpdate));
 
         window.addEventListener('resize', maybeUpdate);
 

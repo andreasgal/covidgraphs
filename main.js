@@ -180,14 +180,17 @@ async function load() {
             return Array.from(new Set(dataset.map(x => x.data).flat().map(x => x.key[n]).filter(x => !!x)).keys());
         };
 
-        const plot = (svg, width, height, dataset, value, predict, logscale) => {
-            const actual = dataset.filter(d => !('predicted' in d)).length;
+        const plot = (svg, width, height, datasets, value, predict, logscale) => {
+            const actual = datasets[0].filter(d => !('predicted' in d)).length;
 
             // limit to the selected number of predicted days
-            dataset = dataset.slice(0, actual + (predict * 1));
+            datasets = datasets.map(dataset => dataset.slice(0, actual + (predict * 1)));
 
             // skip over days before the first infection (or the first 10 for logscale)
-            dataset = dataset.filter(d => d.data[value] > (logscale ? 10 : 0));
+            while (datasets[0].length && Math.max.apply(null, datasets.map(dataset => dataset[0].data[value])) < (logscale ? 10 : 1))
+                datasets = datasets.map(dataset => dataset.slice(1));
+
+            let dataset = datasets[0];
 
             if (!dataset.length)
                 return;
@@ -302,7 +305,7 @@ async function load() {
             return dataset;
         };
 
-        const graph = (dataset, value, predict, logscale, title) => {
+        const graph = (datasets, value, predict, logscale, title) => {
             const div = document.getElementById('graph');
 
             // remove anything we might have drawn before
@@ -323,7 +326,7 @@ async function load() {
 		.style('font-size', '24px')
                 .text(title);
 
-            plot(svg, width, height, dataset, value, predict, logscale);
+            plot(svg, width, height, datasets, value, predict, logscale);
         };
 
 
@@ -356,7 +359,7 @@ async function load() {
             const updated = [].concat(key, [value, predict, logscale, window.innerWidth, window.innerHeight]).join('|');
             if (current != updated) {
                 current = updated;
-                graph(select(dataset, key), value, predict, logscale, title(key, value));
+                graph([select(dataset, key)], value, predict, logscale, title(key, value));
             }
         };
 

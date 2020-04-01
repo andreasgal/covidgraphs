@@ -20,6 +20,12 @@ async function load() {
         return s.substr(5, 2) + '-' + s.substr(8, 2) + '-' + s.substr(0, 4);
     };
 
+    const nextDay = date => {
+        date = new Date(date);
+        date.setDate(date.getDate() + 1);
+        return date;
+    };
+
     const display = (mode, msg) => {
         let e = document.querySelector('#' + mode);
         e.style.display = (!msg ? 'none' : 'block');
@@ -95,12 +101,6 @@ async function load() {
     };
 
     const fetchAllData = async function() {
-        const nextDay = date => {
-            date = new Date(date);
-            date.setDate(date.getDate() + 1);
-            return date;
-        };
-
         const first_date = new Date(Date.UTC(2020, 0, 22)); // 01-22-2020
         const last_date = nextDay(new Date());
         let date = first_date;
@@ -148,6 +148,24 @@ async function load() {
             };
             return dataset.map(x => ({ date: x.date, data: accumulate(x.data) }));
         };
+
+        const model = (dataset) => {
+	    let positive = d3.regressionExp()(dataset.map((d, i) => [i, d.data.positive]));
+            let deaths = d3.regressionExp()(dataset.map((d, i) => [i, d.data.deaths]));
+            for (let i = 0; i < 42; ++i) {
+                let x = dataset.length - 1;
+                let previous = dataset[x];
+                dataset.push({
+                    date: nextDay(previous.date),
+                    data: {
+                        positive: positive.predict(x) | 0,
+                        deaths: deaths.predict(x) | 0,
+                    },
+                    predicted: true,
+                });
+            }
+            return dataset;
+        }
 
         const listKeys = (dataset, n) => {
             return Array.from(new Set(dataset.map(x => x.data).flat().map(x => x.key[n]).filter(x => !!x)).keys());
@@ -234,7 +252,7 @@ async function load() {
                 .attr('y', d => (y(d.data[value]) + y(d.previous.data[value])) / 2 - height / 100);
         }
 
-        const graph = (dataset, value) => {
+        const graph = (dataset, value, predict) => {
             const div = document.getElementById('graph');
 
             // remove anything we might have drawn before
@@ -248,10 +266,10 @@ async function load() {
                   .attr('width', width)
                   .attr('height', height);
 
-            plot(svg, width, height, dataset, value, 0);
+            plot(svg, width, height, dataset, value, predict);
         };
 
-        const update = (key, dataset, value) => {
+        const update = (key, dataset, value, predict) => {
             let [country, state, county] = key;
 
             if (country !== 'ALL') {
@@ -277,30 +295,36 @@ async function load() {
             while (dataset.length && !dataset[dataset.length - 1].data.length)
                 dataset.pop();
 
+            // Group datasets and eliminate geographic labels
             dataset = group(dataset);
 
-            // track the previous day's value in previous
-            dataset = dataset.map((d, i) => ({ date: d.date, previous: dataset[Math.max(0, i - 1)], data: d.data }));
+            // Predict into the future
+            dataset = model(dataset);
 
             // sanitize data
-            dataset.forEach(d => {
+            dataset.forEach((d, i) => {
+                d.previous = dataset[Math.max(0, i - 1)];
                 ['positive', 'deaths'].forEach(k => {
                     d.data[k] = Math.max(d.data[k], d.previous.data[k]);
                 });
             });
 
-            graph(dataset, value);
+            graph(dataset, value, predict);
         };
 
         let current = '';
         const maybeUpdate = () => {
             const key = [$('#country').value, $('#state').value, $('#county').value];
-            const updated = [].concat(key, [$('#value').value]).join('|');
+            const updated = [].concat(key, [$('#value').value, $('#predict').value]).join('|');
             if (current != updated) {
                 current = updated;
-                update(key, dataset, $('#value').value);
+                update(key, dataset, $('#value').value, $('#predict').value);
             }
         };
+
+        $('#predict').addEventListener('change', (event) => {
+            maybeUpdate();
+        });
 
         $('#country').addEventListener('change', (event) => {
             setOptions($('#state'), listKeys(filterBy(dataset, COUNTRY, $('#country').value), STATE), 'ALL');

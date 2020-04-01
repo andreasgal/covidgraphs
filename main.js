@@ -302,24 +302,7 @@ async function load() {
             return dataset;
         };
 
-        const title = (key, value) => {
-            const [country, state, county] = key;
-
-            let title = 'COVID-19 ' + value;
-            if (county !== 'ALL') {
-                title += ' (' + county + ')';
-            } else if (state !== 'ALL') {
-                title += ' (' + state + ')';
-            } else if (country !== 'ALL') {
-                title += ' (' + country + ')';
-            } else {
-                title += ' world-wide';
-            }
-
-            return title;
-        };
-
-        const graph = (dataset, key, value, predict, logscale) => {
+        const graph = (dataset, value, predict, logscale, title) => {
             const div = document.getElementById('graph');
 
             // remove anything we might have drawn before
@@ -338,12 +321,27 @@ async function load() {
 		.attr('y', height / 10)
                 .attr('text-anchor', 'middle')
 		.style('font-size', '24px')
-                .text(title(key, value));
-
-            // filter dataset
-            dataset = select(dataset, key);
+                .text(title);
 
             plot(svg, width, height, dataset, value, predict, logscale);
+        };
+
+
+        const title = (key, value) => {
+            const [country, state, county] = key;
+
+            let title = 'COVID-19 ' + value;
+            if (county !== 'ALL') {
+                title += ' (' + county + ')';
+            } else if (state !== 'ALL') {
+                title += ' (' + state + ')';
+            } else if (country !== 'ALL') {
+                title += ' (' + country + ')';
+            } else {
+                title += ' world-wide';
+            }
+
+            return title;
         };
 
         let current = '';
@@ -358,7 +356,7 @@ async function load() {
             const updated = [].concat(key, [value, predict, logscale, window.innerWidth, window.innerHeight]).join('|');
             if (current != updated) {
                 current = updated;
-                graph(dataset, key, value, predict, logscale);
+                graph(select(dataset, key), value, predict, logscale, title(key, value));
             }
         };
 

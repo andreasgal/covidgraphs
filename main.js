@@ -186,7 +186,7 @@ async function load() {
             const logscale = options.logscale;
 
             // skip over days before the first infection
-            datasets = datasets.map(dataset => dataset.filter(d => d.data[value] >= 1));
+            datasets = datasets.map(dataset => dataset.filter(d => d.data[value] >= (logscale ? 10 : 1)));
 
             // remove datasets that are empty
             datasets = datasets.filter(dataset => dataset.length > 0);
@@ -215,7 +215,7 @@ async function load() {
                 .attr('x', width / 2)
                 .attr('y', height - margin.bottom / 2)
                 .style('text-anchor', 'middle')
-                .text('Days since first ' + value);
+                .text('Days since first ' + (logscale ? '10 ' : '') + value);
 
             svg.append('g')
                 .style('font', font)
@@ -235,7 +235,7 @@ async function load() {
                     .attr('y1', (d, i) => y(dataset[Math.max(i - 1, 0)].data[value]))
                     .attr('x2', (d, i) => x(i))
                     .attr('y2', d => y(d.data[value]))
-                    .attr('stroke-dasharray', d => d.predicted ? '7,7' : '0,0');
+                    .attr('stroke-dasharray', d => d.predicted ? '3,7' : '0,0');
 
                 svg.append('g')
                     .selectAll('circle')

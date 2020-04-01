@@ -220,7 +220,7 @@ async function load() {
             svg.append('g')
                 .style('font', font)
                 .attr('transform', `translate(${margin.left}, 0)`)
-                .call(d3.axisLeft().scale(y).ticks(10).tickFormat(d => logscale ? (((Math.log10(d) | 0) === Math.log10(d) || d >= 1000) ? d : '') : d));
+                .call(d3.axisLeft().scale(y).ticks(10).tickFormat(d => logscale ? (((Math.log10(d) | 0) === Math.log10(d)) ? d : '') : d));
 
             const draw = (dataset, color, label) => {
                 svg.append('g')
@@ -385,13 +385,19 @@ async function load() {
             const predict = $('#predict').value;
             const showrate = $('#showrate').checked;
             const logscale = $('#logscale').checked;
-            const updated = [].concat(key, [value, predict, showrate, logscale, window.innerWidth, window.innerHeight]).join('|');
+            const compare = $('#compare').checked;
+            const updated = [].concat(key, [value, predict, showrate, logscale, compare, window.innerWidth, window.innerHeight]).join('|');
             if (current != updated) {
                 current = updated;
-                graph([select(dataset, key, predict)], {
+                const datasets = [select(dataset, key, predict)];
+                if (compare) {
+                    datasets.push(select(dataset, ['Italy', 'ALL', 'ALL'], predict));
+                }
+                graph(datasets, {
                     value: value,
                     showrate: showrate,
                     logscale: logscale,
+                    compare: compare,
                     title: title(key, value),
                 });
             }
@@ -418,7 +424,7 @@ async function load() {
             maybeUpdate();
         });
 
-        $$('#county,#value,#showrate,#logscale').forEach(e => e.addEventListener('change', maybeUpdate));
+        $$('#county,#value,#showrate,#logscale,#compare').forEach(e => e.addEventListener('change', maybeUpdate));
 
         window.addEventListener('resize', maybeUpdate);
 

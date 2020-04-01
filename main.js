@@ -150,18 +150,22 @@ async function load() {
         };
 
         const model = (dataset) => {
-            const filter = (dataset, value) => dataset.map((d, i) => [i, d.data[value]]).filter((d, i) => !!d[1]);
-            let positive = d3.regressionExp()(filter(dataset, 'positive'));
-            let deaths = d3.regressionExp()(filter(dataset, 'deaths'));
+            const rate = value => {
+                const recent = dataset.slice(dataset.length - 3, dataset.length);
+                const rate = recent.map(d => d.data[value] / d.previous.data[value]);
+                return rate.reduce((total, x) => total + x, 0) / rate.length;
+            };
+            const positive = rate('positive');
+            const deaths = rate('deaths');
             for (let i = 0; i < 42; ++i) {
                 let previous = dataset[dataset.length - 1];
-                let x = (previous.date.getTime() - dataset[0].date.getTime()) / (24 * 60 * 60 * 1000);
                 dataset.push({
                     date: nextDay(previous.date),
                     data: {
-                        positive: positive.predict(x) | 0,
-                        deaths: deaths.predict(x) | 0,
+                        positive: (previous.data.positive * positive) | 0,
+                        deaths: (previous.data.deaths * deaths) | 0,
                     },
+                    previous: previous,
                     predicted: true,
                 });
             }
@@ -311,9 +315,6 @@ async function load() {
             // Group datasets and eliminate geographic labels
             dataset = group(dataset);
 
-            // Predict into the future
-            dataset = model(dataset);
-
             // sanitize data
             dataset.forEach((d, i) => {
                 d.previous = dataset[Math.max(0, i - 1)];
@@ -321,6 +322,9 @@ async function load() {
                     d.data[k] = Math.max(d.data[k], d.previous.data[k]);
                 });
             });
+
+            // Predict into the future
+            dataset = model(dataset);
 
             graph(dataset, value, predict);
         };

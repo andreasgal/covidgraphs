@@ -39,6 +39,6 @@ div#source {
 select {
     margin: 0px 20px 0px 0px;
 }
-select#type, select#predict, label[for="predict"] {
+select#type {
     display: none;
 }

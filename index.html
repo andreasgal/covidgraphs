@@ -5,33 +5,44 @@
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://d3js.org/topojson.v0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/HarryStevens/d3-regression@master/dist/d3-regression.min.js"></script>
-    <script src="main.js"></script>
+    <script src="storage.js"></script>
+    <script src="csse.js"></script>
   </head>
   <body>
     <div id="graph"></div>
+    <div id="log"></div>
     <div id="ui">
-      <select id="type">
-      <option value="plot" selected>Plot</option>
-      <option value="map">Map</option>
-      </select>
-      <label for="state">State:</label>
-      <select id="state"></select>
-      <label for="date">Date:</label>
-      <select id="date"></select>
-      <select id="value"></select>
-      <label for="predict">Predict:</label>
-      <select id="predict">
-        <option value="0" selected>Actual data only</option>
-        <option value="7">1 week</option>
-        <option value="14">2 weeks</option>
-        <option value="21">3 weeks</option>
-        <option value="28">4 weeks</option>
-        <option value="35">5 weeks</option>
-        <option value="42">6 weeks</option>
-      </select>
+      <div id="error"></div>
+      <div id="status"></div>
+      <div id="settings">
+        <select id="type">
+          <option value="plot" selected>Plot</option>
+        </select>
+        <label for="country">Country:</label>
+        <select id="country"></select>
+        <label for="state">State:</label>
+        <select id="state"></select>
+        <label for="county">County:</label>
+        <select id="county"></select>
+        <label for="value">Display:</label>
+        <select id="value">
+          <option value="positive" selected>Infected</option>
+          <option value="deaths">Deaths</option>
+        </select>
+        <label for="predict">Predict:</label>
+        <select id="predict">
+          <option value="0" selected>Actual data only</option>
+          <option value="7">1 week</option>
+          <option value="14">2 weeks</option>
+          <option value="21">3 weeks</option>
+          <option value="28">4 weeks</option>
+          <option value="35">5 weeks</option>
+          <option value="42">6 weeks</option>
+        </select>
+      </div>
     </div>
     <div id="source">
-      Source: <a href="https://covidtracker.com">covidtracker.com</a>
+      Source: <a href="https://github.com/CSSEGISandData/COVID-19">https://github.com/CSSEGISandData/COVID-19</a>
     </div>
   </body>
 </html>

@@ -153,7 +153,7 @@ async function load() {
             return dataset.map(x => ({ date: x.date, data: accumulate(x.data) }));
         };
 
-        const model = (dataset) => {
+        const model = (dataset, predict) => {
             const rate = value => {
                 const recent = dataset.slice(dataset.length - 3, dataset.length);
                 const rate = recent.map(d => d.data[value] / d.previous.data[value]);
@@ -161,7 +161,7 @@ async function load() {
             };
             const positive = rate('positive');
             const deaths = rate('deaths');
-            for (let i = 0; i < 42; ++i) {
+            for (let i = 0; i < predict; ++i) {
                 let previous = dataset[dataset.length - 1];
                 dataset.push({
                     date: nextDay(previous.date),
@@ -180,12 +180,7 @@ async function load() {
             return Array.from(new Set(dataset.map(x => x.data).flat().map(x => x.key[n]).filter(x => !!x)).keys());
         };
 
-        const plot = (svg, width, height, datasets, value, predict, logscale) => {
-            const actual = datasets[0].filter(d => !('predicted' in d)).length;
-
-            // limit to the selected number of predicted days
-            datasets = datasets.map(dataset => dataset.slice(0, actual + (predict * 1)));
-
+        const plot = (svg, width, height, datasets, value, logscale) => {
             // skip over days before the first infection (or the first 10 for logscale)
             while (datasets[0].length && Math.max.apply(null, datasets.map(dataset => dataset[0].data[value])) < (logscale ? 10 : 1))
                 datasets = datasets.map(dataset => dataset.slice(1));
@@ -270,7 +265,7 @@ async function load() {
             draw(datasets[0]);
         }
 
-        const select = (dataset, key) => {
+        const select = (dataset, key, predict) => {
             const [country, state, county] = key;
 
             // filter
@@ -301,12 +296,12 @@ async function load() {
             });
 
             // Predict into the future
-            dataset = model(dataset);
+            dataset = model(dataset, predict);
 
             return dataset;
         };
 
-        const graph = (datasets, value, predict, logscale, title) => {
+        const graph = (datasets, value, logscale, title) => {
             const div = document.getElementById('graph');
 
             // remove anything we might have drawn before
@@ -327,7 +322,7 @@ async function load() {
 		.style('font-size', '24px')
                 .text(title);
 
-            plot(svg, width, height, datasets, value, predict, logscale);
+            plot(svg, width, height, datasets, value, logscale);
         };
 
 
@@ -360,7 +355,7 @@ async function load() {
             const updated = [].concat(key, [value, predict, logscale, window.innerWidth, window.innerHeight]).join('|');
             if (current != updated) {
                 current = updated;
-                graph([select(dataset, key)], value, predict, logscale, title(key, value));
+                graph([select(dataset, key, predict)], value, logscale, title(key, value));
             }
         };
 

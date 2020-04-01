@@ -270,7 +270,6 @@ async function load() {
             draw(datasets[0]);
         }
 
-
         const select = (dataset, key) => {
             const [country, state, county] = key;
 

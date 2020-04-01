@@ -135,6 +135,9 @@ async function load() {
         const COUNTY = 2;
 
         const filterBy = (dataset, n, value) => {
+            if (value === 'ALL') {
+                return dataset;
+            }
             return dataset.map(r => ({ date: r.date, data: r.data.filter(x => x.key[n] === value) }));
         };
 
@@ -291,20 +294,16 @@ async function load() {
             plot(svg, width, height, dataset, value, predict, logscale);
         };
 
+        const select = (country, state, county) => {
+            state = state || 'ALL';
+            county = county || 'ALL';
+        };
+
         const update = (key, dataset, value, predict, logscale) => {
             let [country, state, county] = key;
-
-            if (country !== 'ALL') {
-                dataset = filterBy(dataset, COUNTRY, country);
-            }
-
-            if (state !== 'ALL') {
-                dataset = filterBy(dataset, STATE, state);
-            }
-
-            if (county !== 'ALL') {
-                dataset = filterBy(dataset, COUNTY, county);
-            }
+            dataset = filterBy(dataset, COUNTRY, country);
+            dataset = filterBy(dataset, STATE, state);
+            dataset = filterBy(dataset, COUNTY, county);
 
             // don't mutate original dataset
             dataset = dataset.slice();

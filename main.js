@@ -21,11 +21,13 @@ async function load() {
         return s.substr(5, 2) + '-' + s.substr(8, 2) + '-' + s.substr(0, 4);
     };
 
-    const nextDay = date => {
+    const addDay = (date, n) => {
         date = new Date(date);
-        date.setDate(date.getDate() + 1);
+        date.setDate(date.getDate() + n);
         return date;
     };
+
+    const nextDay = (date) => addDay(date, 1);
 
     const display = (mode, msg) => {
         let e = document.querySelector('#' + mode);
@@ -292,7 +294,13 @@ async function load() {
             };
 
             if (datasets.length === 1) {
-                draw(datasets[0], 'black', '(today)');
+                const dataset = datasets[0];
+                let label = 'today';
+                if (options.predict) {
+                    label = addDay(dataset[dataset.length - 1].date, options.predict).toDateString().split(' ');
+                    label = label[1] + ' ' + label[2];
+                }
+                draw(dataset, 'black', '(' + label + ')');
                 return;
             }
 
@@ -440,6 +448,7 @@ async function load() {
                     showrate: showrate,
                     logscale: logscale,
                     compare: compare,
+                    predict: predict | 0,
                     title: compare ? '' : title(key, value),
                 });
             }

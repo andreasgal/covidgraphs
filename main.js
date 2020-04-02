@@ -15,6 +15,7 @@ function log(msg) {
 
 async function load() {
     const url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/';
+    const params = Object.fromEntries(window.location.hash.substr(1).split('&').map(p => p.split('=')));
 
     const formatDate = (date) => {
         let s = date.toISOString(); // 2011-10-05T14:48:00.000Z
@@ -480,6 +481,19 @@ async function load() {
         window.addEventListener('resize', maybeUpdate);
 
         setOptions($('#country'), list(dataset, ['ALL', 'ALL', 'ALL'], COUNTRY), 'US');
+
+        Object.keys(params).forEach(k => {
+            let element = $('#' + k);
+            let value = params[k];
+            if (element) {
+                if ('checked' in element) {
+                    element.checked = value;
+                } else if ('value' in element) {
+                    element.value = value;
+                }
+                element.dispatchEvent(new Event('change'));
+            }
+        });
     });
 };
 

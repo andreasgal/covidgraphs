@@ -297,7 +297,7 @@ async function load() {
                 const dataset = datasets[0];
                 let label = 'today';
                 if (options.predict) {
-                    label = addDay(dataset[dataset.length - 1].date, options.predict).toDateString().split(' ');
+                    label = dataset[dataset.length - 1].date.toDateString().split(' ');
                     label = label[1] + ' ' + label[2];
                 }
                 draw(dataset, 'black', '(' + label + ')');

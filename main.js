@@ -163,6 +163,13 @@ async function load() {
             return dataset.map(x => ({ date: x.date, data: accumulate(x.data) }));
         };
 
+        const delta = (dataset) => {
+            return dataset.map((d, i) => ({
+                date: d.date,
+                data: Object.fromEntries(Object.entries(d.data).map(x => [x[0], x[1] - dataset[Math.max(i - 1, 0)].data[x[0]]])),
+            }));
+        };
+
         const model = (dataset, predict) => {
             const rate = value => {
                 const recent = dataset.slice(dataset.length - 3, dataset.length);
@@ -194,6 +201,11 @@ async function load() {
             const value = options.value;
             const showrate = options.showrate;
             const logscale = options.logscale;
+
+            // calculate the daily delta
+            if (options.delta) {
+                datasets = datasets.map(dataset => delta(dataset));
+            }
 
             // skip over days before the first infection
             datasets = datasets.map(dataset => dataset.filter(d => d.data[value] >= (logscale ? 10 : 1)));
@@ -452,7 +464,8 @@ async function load() {
             const showrate = $('#showrate').checked;
             const logscale = $('#logscale').checked;
             const compare = $('#compare').checked;
-            const updated = [].concat(key, [value, predict, showrate, logscale, compare, window.innerWidth, window.innerHeight]).join('|');
+            const delta = $('#delta').checked;
+            const updated = [].concat(key, [value, predict, showrate, logscale, compare, delta, window.innerWidth, window.innerHeight]).join('|');
             if (current != updated) {
                 current = updated;
                 let keys = [key];
@@ -463,10 +476,11 @@ async function load() {
                 const datasets = keys.map(key => select(dataset, key, predict));
                 graph(datasets, keys, {
                     value: value,
+                    predict: predict | 0,
                     showrate: showrate,
                     logscale: logscale,
                     compare: compare,
-                    predict: predict | 0,
+                    delta: delta,
                     title: compare ? '' : title(key, value),
                 });
             }
@@ -493,7 +507,7 @@ async function load() {
             maybeUpdate();
         });
 
-        $$('#county,#value,#showrate,#logscale,#compare').forEach(e => e.addEventListener('change', maybeUpdate));
+        $$('#county,#value,#showrate,#logscale,#compare,#delta').forEach(e => e.addEventListener('change', maybeUpdate));
 
         window.addEventListener('resize', maybeUpdate);
 

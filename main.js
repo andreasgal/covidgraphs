@@ -153,8 +153,7 @@ async function load() {
         };
 
         const group = (dataset) => {
-            const init = {};
-            Object.keys(dataset[dataset.length - 1].data[0]).filter(k => k !== 'key').forEach(k => init[k] = 0);
+            const init = Object.fromEntries(Object.entries(dataset[dataset.length - 1].data[0]).filter(x => x[0] !== 'key').map(x => [x[0], 0]));
             const accumulate = (data) => {
                 return data.reduce((total, x) => {
                     Object.keys(total).filter(k => k !== 'key').forEach(k => total[k] += x[k]);

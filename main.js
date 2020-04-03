@@ -261,6 +261,7 @@ async function load() {
                     .on('mouseover', d => {
                         tooltip.html(formatUserFriendlyDate(d.date) + '<br/><b>'  + d.data[value] + '</b>')
                             .style('background', color)
+                            .style('color', 'white')
                             .style('opacity', .8)
                             .style('left', d3.event.pageX + "px")
                             .style('top', d3.event.pageY + "px");
@@ -318,7 +319,7 @@ async function load() {
                 if (options.predict) {
                     label = formatUserFriendlyDate(dataset[dataset.length - 1].date);
                 }
-                draw(dataset, 'black', '(' + label + ')');
+                draw(dataset, '#000000', '(' + label + ')');
                 return;
             }
 
@@ -499,7 +500,7 @@ async function load() {
 
         setOptions($('#country'), list(dataset, ['ALL', 'ALL', 'ALL'], COUNTRY), 'US');
 
-        Object.keys(params).forEach(k => {
+        Object.keys(params).filter(k => !!k).forEach(k => {
             let element = $('#' + k);
             let value = params[k];
             if (element) {

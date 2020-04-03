@@ -42,3 +42,12 @@ select {
 select#type {
     display: none;
 }
+div.tooltip {
+    position: absolute;
+    text-align: center;
+    padding: 10px;
+    font: 12px sans-serif;
+    border: 5px;
+    border-radius: 8px;
+    pointer-events: none;
+}

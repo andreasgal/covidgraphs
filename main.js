@@ -22,6 +22,11 @@ async function load() {
         return s.substr(5, 2) + '-' + s.substr(8, 2) + '-' + s.substr(0, 4);
     };
 
+    const formatUserFriendlyDate = (date) => {
+        let parts = date.toDateString().split(' ');
+        return parts[1] + ' ' + parts[2];
+    };
+
     const addDay = (date, n) => {
         date = new Date(date);
         date.setDate(date.getDate() + n);
@@ -182,6 +187,10 @@ async function load() {
             return dataset;
         }
 
+        const tooltip = d3.select('body').append('div')
+              .attr('class', 'tooltip')
+              .style('opacity', 0);
+
         const plot = (svg, width, height, datasets, keys, options) => {
             const value = options.value;
             const showrate = options.showrate;
@@ -248,8 +257,17 @@ async function load() {
                     .attr('stroke-width', 3)
                     .attr('cx', (d, i) => x(i))
                     .attr('cy', d => y(d.data[value]))
-                    .attr('r', 5);
-
+                    .attr('r', 5)
+                    .on('mouseover', d => {
+                        tooltip.html(formatUserFriendlyDate(d.date) + '<br/><b>'  + d.data[value] + '</b>')
+                            .style('background', color)
+                            .style('opacity', .8)
+                            .style('left', d3.event.pageX + "px")
+                            .style('top', d3.event.pageY + "px");
+                    })
+                    .on('mouseout', d => {
+                        tooltip.style('opacity', 0);
+	            });
                 if (!options.compare) {
                     svg.append('g')
                         .selectAll('text.value')
@@ -298,8 +316,7 @@ async function load() {
                 const dataset = datasets[0];
                 let label = 'today';
                 if (options.predict) {
-                    label = dataset[dataset.length - 1].date.toDateString().split(' ');
-                    label = label[1] + ' ' + label[2];
+                    label = formatUserFriendlyDate(dataset[dataset.length - 1].date);
                 }
                 draw(dataset, 'black', '(' + label + ')');
                 return;

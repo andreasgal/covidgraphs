@@ -167,6 +167,7 @@ async function load() {
             return dataset.map((d, i) => ({
                 date: d.date,
                 data: Object.fromEntries(Object.entries(d.data).map(x => [x[0], x[1] - dataset[Math.max(i - 1, 0)].data[x[0]]])),
+                predicted: d.predicted,
             }));
         };
 

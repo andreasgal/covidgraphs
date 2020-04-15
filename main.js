@@ -451,7 +451,7 @@ async function load() {
                 .map(key => [key, select(dataset, key)])
                 .map(x => [x[0], x[1][x[1].length - 1].data[value] ])
                 .sort((a, b) => b[1] - a[1]);
-            return max.slice(0, 7).map(x => x[0]);
+            return max.slice(0, 15).map(x => x[0]);
         };
 
         let current = '';

@@ -281,7 +281,7 @@ async function load() {
                     .on('mouseout', d => {
                         tooltip.style('opacity', 0);
 	            });
-                if (!options.compare) {
+                if (options.compare === 'no') {
                     svg.append('g')
                         .selectAll('text.value')
                         .data(dataset)
@@ -464,13 +464,13 @@ async function load() {
             const predict = $('#predict').value;
             const showrate = $('#showrate').checked;
             const logscale = $('#logscale').checked;
-            const compare = $('#compare').checked;
+            const compare = $('#compare').value;
             const delta = $('#delta').checked;
             const updated = [].concat(key, [value, predict, showrate, logscale, compare, delta, window.innerWidth, window.innerHeight]).join('|');
             if (current != updated) {
                 current = updated;
                 let keys = [key];
-                if (compare) {
+                if (compare !== 'no') {
                     // add comparable countries/states/counties
                     keys = keys.concat(peers(dataset, key, value));
                 }
@@ -482,7 +482,7 @@ async function load() {
                     logscale: logscale,
                     compare: compare,
                     delta: delta,
-                    title: compare ? '' : title(key, value),
+                    title: (compare === 'no') ? title(key, value) : '',
                 });
             }
         };

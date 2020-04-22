@@ -39,9 +39,10 @@ div#source {
 select {
     margin: 0px 20px 0px 0px;
 }
-select#type {
+select#type, select#predict, label[for="predict"] {
     display: none;
 }
+
 div.tooltip {
     position: absolute;
     text-align: center;

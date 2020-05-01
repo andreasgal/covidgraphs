@@ -171,6 +171,26 @@ async function load() {
             }));
         };
 
+        const avg = (dataset) => {
+            if (!dataset.length) {
+                return;
+            }
+            const weight = 1 / dataset.length;
+            const sum = Object.fromEntries(Object.entries(dataset[0].data).map(x => [x[0], 0]));
+            dataset.map(d => {
+                Object.entries(d.data).map(x => sum[x[0]] += weight * x[1]);
+            });
+            return Object.fromEntries(Object.entries(sum).map(x => [x[0], Math.round(x[1])]));
+        };
+
+        const smooth = (dataset) => {
+            return dataset.map((d, i) => ({
+                date: d.date,
+                data: avg(dataset.slice(Math.max(0, i - 6), i + 1)),
+                predicted: d.predict,
+            }));
+        };
+
         const model = (dataset, predict) => {
             const rate = value => {
                 const recent = dataset.slice(dataset.length - 3, dataset.length);
@@ -206,6 +226,11 @@ async function load() {
             // calculate the daily delta
             if (options.delta) {
                 datasets = datasets.map(dataset => delta(dataset));
+            }
+
+            // smooth the data with a moving window
+            if (options.smooth) {
+                datasets = datasets.map(dataset => smooth(dataset, options.smooth));
             }
 
             // skip over days before the first infection
@@ -465,8 +490,9 @@ async function load() {
             const showrate = $('#showrate').checked;
             const logscale = $('#logscale').checked;
             const compare = $('#compare').value;
+            const smooth = $('#smooth').value;
             const delta = $('#delta').checked;
-            const updated = [].concat(key, [value, predict, showrate, logscale, compare, delta, window.innerWidth, window.innerHeight]).join('|');
+            const updated = [].concat(key, [value, predict, showrate, logscale, compare, smooth, delta, window.innerWidth, window.innerHeight]).join('|');
             if (current != updated) {
                 current = updated;
                 let keys = [key];
@@ -481,15 +507,12 @@ async function load() {
                     showrate: showrate,
                     logscale: logscale,
                     compare: compare,
+                    smooth: smooth | 0,
                     delta: delta,
                     title: (compare === 'no') ? title(key, value) : '',
                 });
             }
         };
-
-        $('#predict').addEventListener('change', (event) => {
-            maybeUpdate();
-        });
 
         $('#country').addEventListener('change', (event) => {
             setOptions($('#state'), list(dataset, [$('#country').value, 'ALL', 'ALL'], STATE), 'ALL');
@@ -508,7 +531,7 @@ async function load() {
             maybeUpdate();
         });
 
-        $$('#county,#value,#showrate,#logscale,#compare,#delta').forEach(e => e.addEventListener('change', maybeUpdate));
+        $$('#county,#value,#showrate,#logscale,#compare,#delta,#smooth,#predict').forEach(e => e.addEventListener('change', maybeUpdate));
 
         window.addEventListener('resize', maybeUpdate);
 
